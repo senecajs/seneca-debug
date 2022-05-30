@@ -23,10 +23,13 @@ function createApp() {
       return res.json();
     })
     .then(function(config) {
+      console.log('0')
       const client = new Nes.Client("ws://localhost:" + config.port);
 
       const start = async () => {
+        console.log('1')
         await client.connect();
+        console.log('hereeeeeeee')
 
         let currentFilter = "/debug";
 
