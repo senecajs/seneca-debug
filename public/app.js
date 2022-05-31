@@ -21,6 +21,7 @@ export default {
   created: function() {
     const self = this;
     this.$root.$on("msg", function(data) {
+      console.log('uaiii', data)
       self.addmsg(data);
     });
   },
@@ -70,6 +71,7 @@ export default {
             : top.items
           : top.items;
 
+        console.log('aqui', data);
         const entry = {
           id: data.meta.id,
           name: (data.meta.start % 10000000) + " " + data.meta.pattern,

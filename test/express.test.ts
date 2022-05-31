@@ -15,6 +15,9 @@ function setupSeneca() {
         port: 8899,
         host: 'localhost'
       },
+      ws: {
+        port: 8898,
+      },
       wspath: '/debug',
       store: false,
       test: false,

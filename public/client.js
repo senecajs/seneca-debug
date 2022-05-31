@@ -26,6 +26,13 @@ function createApp() {
       console.log('0')
       const client = new Nes.Client("ws://localhost:" + config.port);
 
+      const testClient = new WebSocket("ws://localhost:" + config.port);
+
+      testClient.onmessage = (event) => {
+        const { data } = event;
+        app.$root.$emit('msg', JSON.parse(data));
+      }
+
       const start = async () => {
         console.log('1')
         await client.connect();
