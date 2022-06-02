@@ -1,15 +1,25 @@
 import express, { Express } from "express";
 import stringify from "json-stringify-safe";
+import { Server } from 'node:http';
 import ws from 'ws';
 import Intern from "./intern";
 
 /*
   TODO LIST:
-    1. Intern seems useless?!
+    1. Intern doesn't work.
     2. Improve code quality.
 */
 
-const GLOBALS = {
+type GLOBALS = {
+  LOG_TO_CONSOLE: boolean,
+  LOG_TO_CONSOLE_USERS: any,
+  EXPRESS_READY: boolean,
+  WSPATH: string | null,
+  EXPRESS_SERVER: Server | null,
+  WS_SERVER: ws.Server<ws.WebSocket> | null,
+}
+
+const GLOBALS: GLOBALS = {
   LOG_TO_CONSOLE: false,
   LOG_TO_CONSOLE_USERS: {},
   EXPRESS_READY: false,
@@ -22,7 +32,7 @@ function inward(seneca: any, spec: any, options: any, intern: Intern) {
   const { data } = spec;
   data.debug_kind = 'in'
 
-    var data_in
+    let data_in: any;
     if (options.store) {
       const meta = data.meta
       const parent = meta.parents[0] ? meta.parents[0][1] : null
@@ -45,7 +55,7 @@ function inward(seneca: any, spec: any, options: any, intern: Intern) {
 
     if (GLOBALS.EXPRESS_READY) {
       if (!options.prod) {
-        GLOBALS.WS_SERVER.emit(GLOBALS.WSPATH, data);
+        GLOBALS.WS_SERVER!.emit(GLOBALS.WSPATH!, data);
       }
       try {
         data_in = stringify(data)
@@ -87,7 +97,7 @@ function inward(seneca: any, spec: any, options: any, intern: Intern) {
           }
         }
 
-        GLOBALS.WS_SERVER.clients.forEach((c) => {
+        GLOBALS.WS_SERVER!.clients.forEach((c) => {
           c.send(JSON.stringify(data_in))
         });
       } catch (e) {
@@ -100,7 +110,7 @@ function outward(seneca: any, spec: any, options: any, intern: Intern) {
   const { data } = spec;
   data.debug_kind = 'out'
 
-  let data_out
+  let data_out: any;
 
   if (options.store) {
     const trace_node = intern.map[data.meta.id]
@@ -115,7 +125,7 @@ function outward(seneca: any, spec: any, options: any, intern: Intern) {
 
   if (GLOBALS.EXPRESS_READY) {
     if (!options.prod) {
-      GLOBALS.WS_SERVER.emit(GLOBALS.WSPATH, data);
+      GLOBALS.WS_SERVER!.emit(GLOBALS.WSPATH!, data);
     }
 
     try {
@@ -161,7 +171,7 @@ function outward(seneca: any, spec: any, options: any, intern: Intern) {
         }
       }
 
-      GLOBALS.WS_SERVER.clients.forEach((c) => {
+      GLOBALS.WS_SERVER!.clients.forEach((c) => {
           c.send(JSON.stringify(data_out))
         });
       }
@@ -176,16 +186,28 @@ function debug(this: any, options: any) {
   let intern: Intern;
 
   seneca.ready(() => {
-    intern = new Intern(seneca);
-    intern.handlePrintTree();
+    if (options.intern_log) {
+      intern = new Intern(seneca);
+      intern.handlePrintTree();
+    }
   })
 
-  this.outward((ctxt) => {
-    outward(seneca, ctxt, options, intern);
+  this.outward((ctxt: any, data: any) => {
+    // Dirty fix
+    if (ctxt.data) {
+      outward(seneca, ctxt, options, intern);
+    } else if (data) {
+      outward(seneca, { data }, options, intern);
+    }
   })
 
-  this.inward((ctxt) => {
-    inward(seneca, ctxt, options, intern);
+  this.inward((ctxt: any, data: any) => {
+    // Dirty fix
+    if (ctxt.data) {
+      inward(seneca, ctxt, options, intern);
+    } else if (data) {
+      inward(seneca, { data }, options, intern);
+    }
   })
 
   return {
@@ -203,6 +225,7 @@ const defaults = {
   ws: {
     port: 8898,
   },
+  intern_log: false,
   wspath: '/debug',
   store: false,
   test: false,

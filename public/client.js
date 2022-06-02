@@ -23,44 +23,12 @@ function createApp() {
       return res.json();
     })
     .then(function(config) {
-      console.log('0')
-      const client = new Nes.Client("ws://localhost:" + config.port);
+      const wsClient = new WebSocket("ws://localhost:" + config.port);
 
-      const testClient = new WebSocket("ws://localhost:" + config.port);
-
-      testClient.onmessage = (event) => {
+      wsClient.onmessage = (event) => {
         const { data } = event;
         app.$root.$emit('msg', JSON.parse(data));
       }
-
-      const start = async () => {
-        console.log('1')
-        await client.connect();
-        console.log('hereeeeeeee')
-
-        let currentFilter = "/debug";
-
-        const handler = (update, flags) => {
-          app.$root.$emit("msg", update);
-        };
-
-        const updateFilter = filter => {
-          client.unsubscribe(currentFilter, handler);
-
-          if (!filter) {
-            currentFilter = "/debug";
-          } else {
-            currentFilter = "/filter/" + filter;
-          }
-
-          client.subscribe(currentFilter, handler);
-        };
-
-        app.$root.$on("filter", updateFilter);
-
-        updateFilter("");
-      };
-      start();
 
       Vue.prototype.client$ = client;
     });
