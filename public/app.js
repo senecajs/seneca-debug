@@ -71,7 +71,6 @@ export default {
             : top.items
           : top.items;
 
-        console.log('aqui', data);
         const entry = {
           id: data.meta.id,
           name: (data.meta.start % 10000000) + " " + data.meta.pattern,

@@ -1,36 +1,36 @@
-import Archy from 'archy';
+import Archy from 'archy'
 
 export default class Intern {
-  Seneca: any;
-  cmdSpec: any;
-  map: any = {};
+  Seneca: any
+  cmdSpec: any
+  map: any = {}
   trace!: {
-    children: [];
+    children: []
     meta: {
-      pattern: 'top:true';
-    };
-  };
+      pattern: 'top:true'
+    }
+  }
 
   constructor(Seneca: any) {
-    this.Seneca = Seneca;
-    this.cmdSpec = Seneca.argv;
+    this.Seneca = Seneca
+    this.cmdSpec = Seneca.argv
   }
 
   handlePrintTree() {
     if (!this.cmdSpec || !this.cmdSpec.print || !this.cmdSpec.print.tree) {
-      return;
+      return
     }
     // Hack! Complex init means non-deterministic or multiple ready calls,
     // so just delay tree print by some number of seconds to capture full tree.
     const delay_seconds = this.cmdSpec.print.tree.all || this.cmdSpec.print.tree
     if ('number' === typeof delay_seconds) {
       setTimeout(() => {
-        this.printTree();
-      }, 1000 * delay_seconds);
+        this.printTree()
+      }, 1000 * delay_seconds)
     } else {
       // Print after first ready
       this.Seneca.ready(() => {
-        this.printTree();
+        this.printTree()
       })
     }
   }
@@ -59,21 +59,21 @@ export default class Intern {
       const nodes = []
       let ignore = false
 
-      Object.keys(pat).forEach((k) => {
+      Object.keys(pat).forEach(k => {
         const v = pat[k]
         if (
           (!this.cmdSpec.print.tree.all &&
-           (k === 'role' &&
-            (v === 'seneca' ||
-             v === 'basic' ||
-             v === 'util' ||
-             v === 'entity' ||
-             v === 'web' ||
-             v === 'transport' ||
-             v === 'options' ||
-             v === 'mem-store' ||
-             v === 'seneca'))) ||
-            k === 'init'
+            (k === 'role' &&
+              (v === 'seneca' ||
+                v === 'basic' ||
+                v === 'util' ||
+                v === 'entity' ||
+                v === 'web' ||
+                v === 'transport' ||
+                v === 'options' ||
+                v === 'mem-store' ||
+                v === 'seneca'))) ||
+          k === 'init'
         ) {
           ignore = true
         } else {
@@ -102,8 +102,8 @@ export default class Intern {
 
         insert(nodes, tree)
       }
-    });
-    
+    })
+
     console.log(Archy(tree))
   }
 }
