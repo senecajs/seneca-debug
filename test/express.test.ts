@@ -10,6 +10,7 @@ setupSeneca()
 function setupSeneca() {
   Seneca()
     .test()
+    .use('repl')
     .use(debug, {
       express: {
         port: 8899,
