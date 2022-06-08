@@ -15,7 +15,13 @@ export default {
       active: [],
       open: [],
       search_txt: "",
-      filter_txt: ""
+      filter_txt: "",
+      flamegraphdata: {
+        name: "root",
+        value: 0,
+        children: []
+      },
+      flamegraphstack: [],
     };
   },
   created: function() {
@@ -41,6 +47,14 @@ export default {
     },
     filter_txt: function() {
       this.$root.$emit("filter", this.filter_txt);
+    },
+  },
+  filters: {
+    prettyJson(value) {
+      if (!value) {
+        return '';
+      }
+      return JSON.stringify(value, null, 2);
     }
   },
 
@@ -99,14 +113,150 @@ export default {
         msgmapdata[meta.id].data.meta.end = meta.end;
         msgmapdata[meta.id].data.result_length = data.result_length;
 
-        searchlist.push({
+        const searchListData = {
           id: meta.id,
           text: JSON.stringify(msgmapdata[meta.id].data).toLowerCase(),
           parent: parent
-        });
+        }
+
+        searchlist.push(searchListData);
+        this.flamegraphstack.push(searchListData);
+        setTimeout(() => {
+          this.handleFlameStack();
+        }, 2000)
+        // this.handleFlamegraphData(searchListData);
       }
     },
+    handleFlameStack() {
+      while (this.flamegraphstack && this.flamegraphstack.length) {
+        const current = this.flamegraphstack.pop();
+        this.handleFlamegraphData(current);
+      };
+    },
+    handleFlamegraphData(searchListData) {
+     const updatePluginChildren = (children) => {
+      children._inner.count += 1;
+     }
+     const buildActionChildren = (name, value, id) => {
+      return {
+        name,
+        value,
+        children: [],
+        _inner: {
+          count: 1,
+          sum: 0,
+          mean: 0,
+          layer: 'action',
+          ids: [id]
+        }
+      }
+     }
+     const buildPluginChildren = (name, value) => {
+       return {
+         name,
+         value,
+         children: [],
+         _inner: {
+           count: 1,
+           sum: 0,
+           mean: 0,
+           layer: 'plugin',
+           ids: []
+         }
+       }
+     }
+      const handlePluginNameInsertion = (pluginName) => {
+        const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name === pluginName);
+        if (!pluginIsChildrenAlready) {
+          this.flamegraphdata.children.push(buildPluginChildren(pluginName, 0));
+        } else {
+          updatePluginChildren(pluginIsChildrenAlready)
+        }
+      }
+      const handleActionInsertion = (pluginName, action, id, parentId) => {
+        const findActionInChildren = (tree, actionName) => {
+          // Simple tree search algorithm.
+          const stack = [];
+          let node;
+          stack.push(tree);
+          while (stack.length > 0) {
+              node = stack.pop();
+              if (node.name === actionName) {
+                  return node;
+              } else if (node.children && node.children.length) {
+                for (let treeChildren of node.children) {
+                  stack.push(treeChildren);
+                }
+              }
+          }
+          return null;
+        }
+        const findParentById = (tree, parentId) => {
+          // Simple tree search algorithm.
+          const stack = [];
+          let node;
+          stack.push(tree);
+          while (stack.length > 0) {
+              node = stack.pop();
+              console.log('aqui', node._inner.ids, parentId);
+              if (node._inner.ids.includes(parentId)) {
+                  return node;
+              } else if (node.children && node.children.length) {
+                for (let treeChildren of node.children) {
+                  stack.push(treeChildren);
+                }
+              }
+          }
+          return null;
+        }
 
+        const pluginTree = this.flamegraphdata.children.find((c) => c.name === pluginName);
+        if (!pluginTree) {
+          // Ultra edge case that I hope will never occur
+          return;
+        }
+        if (parentId) {
+          const parent = findParentById(pluginTree, parentId);
+          if (parent) {
+            // TODO IMPROVE THIS
+            const actionChildren = findActionInChildren(parent, action);
+            if (!actionChildren) {
+              parent.children.push(buildActionChildren(action, 0, id))
+            } else {
+              actionChildren._inner.count += 1;
+              actionChildren._inner.ids.push(id);
+            }
+          }
+          return;
+        }
+        const actionChildren = findActionInChildren(pluginTree, action);
+        if (!actionChildren) {
+          pluginTree.children.push(buildActionChildren(action, 0, id))
+        } else {
+          actionChildren._inner.count += 1;
+          actionChildren._inner.ids.push(id);
+        }
+      }
+
+      const { id, text, parent } = searchListData;
+      const info = JSON.parse(text);
+      const { meta } = info;
+      console.log('info: ', meta);
+      const { action, end, start, instance, pattern, plugin } = meta;
+      const { name: pluginShortName, fullname } = plugin;
+      handlePluginNameInsertion(fullname);
+      if (!parent) {
+        handleActionInsertion(fullname, action, id, null);
+      } else {
+        setTimeout(() => {
+          // Needs to be async because
+          // Ordu dispatches first children, then parent.
+          console.log('here boi')
+          handleActionInsertion(fullname, action, id, parent)
+        }, 1000)
+      }
+      console.log('final structure: ', this.flamegraphdata);
+    },
     search: function() {
       console.log("search");
       var self = this;

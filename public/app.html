@@ -16,6 +16,8 @@
           justify-space-between
           pa-3
           >
+          <textarea v-model="flamegraphdata" rows="8" cols="40"></textarea>
+          <pre>{{ flamegraphdata | prettyJson }}</pre>
           <v-flex xs5>
             <v-treeview
               ref="msgtree"
