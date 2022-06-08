@@ -21,7 +21,6 @@ export default {
   created: function() {
     const self = this;
     this.$root.$on("msg", function(data) {
-      console.log('uaiii', data)
       self.addmsg(data);
     });
   },
