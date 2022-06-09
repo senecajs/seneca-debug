@@ -2,7 +2,7 @@
   "name": "@seneca/debug",
   "version": "1.0.1",
   "description": "Seneca plugin for debugging Seneca-based systems.",
-  "main": "debug.js",
+  "main": "index.js",
   "scripts": {
     "watch": "webpack --watch",
     "test": "lab -P test -t 60 -I URL,URLSearchParams",
@@ -10,7 +10,8 @@
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"`; echo TAG: v$REPO_VERSION; git commit -a -m v$REPO_VERSION; git push; git tag v$REPO_VERSION; git push --tags;",
     "repo-publish": "npm run repo-tag; npm publish --access public",
-    "prettier": "prettier --write --no-semi --single-quote *.js lib/*.js test/*.js src/*.ts"
+    "prettier": "prettier --write --no-semi --single-quote *.js lib/*.js test/*.js src/*.ts",
+    "build": "tsc -d"
   },
   "repository": {
     "type": "git",
@@ -42,9 +43,11 @@
     "lodash": "^4.17.11",
     "material-design-icons-iconfont": "^5.0.1",
     "nes": "^10.0.0",
+    "typescript": "^4.7.3",
     "vue": "^2.6.10",
     "vue-json-pretty": "^1.6.0",
-    "vuetify": "^1.5.14"
+    "vuetify": "^1.5.14",
+    "ws": "^8.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.4.5",

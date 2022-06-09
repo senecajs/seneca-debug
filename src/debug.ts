@@ -1,7 +1,8 @@
 import stringify from 'json-stringify-safe'
 import { Server } from 'node:http'
 import ws from 'ws'
-import { bootWebServers } from '../lib/web'
+const { bootWebServers } = require('../web');
+
 import Intern from './intern'
 
 /*

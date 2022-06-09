@@ -1,11 +1,11 @@
-import express from "express";
-import ws from 'ws';
+const Express = require("express")
+const ws = require("ws")
 
-function bootWebServers(seneca: any, options: any) {
+function bootWebServers(seneca, options) {
   const { express: expOptions, ws: wsConfig, logToConsole } = options;
-  const app = express();
+  const app = Express();
 
-  app.use(express.static(`${__dirname}/../dist`));
+  app.use(Express.static(`${__dirname}/../dist`));
 
   app.get('/', (req, res) => {
     res.sendFile('index.html');
@@ -30,6 +30,6 @@ function bootWebServers(seneca: any, options: any) {
   seneca.shared.wsServer = wsServer;
 }
 
-export {
+module.exports = {
   bootWebServers,
 }
