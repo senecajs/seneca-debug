@@ -1,12 +1,12 @@
-import stringify from 'json-stringify-safe'
+import Stringify from 'json-stringify-safe'
 import { Server } from 'node:http'
 import ws from 'ws'
-const { bootWebServers } = require('../web');
+const { bootWebServers } = require('../web')
 
 type SharedSenecaState = {
   expressIsReady: boolean
-  expressServer: Server | null
-  wsServer: ws.Server<ws.WebSocket> | null
+  expressServer?: Server
+  wsServer?: ws.Server<ws.WebSocket>
 }
 
 function inward(seneca: any, spec: any, options: any) {
@@ -20,10 +20,10 @@ function inward(seneca: any, spec: any, options: any) {
     return
   }
 
-  if (!options.prod) {
-    seneca.shared.wsServer!.emit(wspath, data)
+  if (!options.prod && seneca.shared.wsServer) {
+    seneca.shared.wsServer.emit(wspath, data)
   }
-  data_in = stringify(data)
+  data_in = Stringify(data)
 
   if (logToConsole) {
     console.log(data_in)
@@ -66,10 +66,10 @@ function outward(seneca: any, spec: any, options: any) {
     return
   }
 
-  if (!options.prod) {
-    seneca.shared.wsServer!.emit(wspath, data)
+  if (!options.prod && seneca.shared.wsServer) {
+    seneca.shared.wsServer.emit(wspath, data)
   }
-  data_out = stringify(data)
+  data_out = Stringify(data)
 
   if (logToConsole) {
     console.log(data_out)
