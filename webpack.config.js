@@ -1,11 +1,10 @@
-
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 module.exports = {
   mode: 'development',
-  context: __dirname+'/public',
-  entry: __dirname+'/public/client.js',
+  context: __dirname + '/public',
+  entry: __dirname + '/public/client.js',
   module: {
     rules: [
       {
@@ -18,15 +17,12 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: [
-          'vue-style-loader',
-          'css-loader'
-        ]
+        use: ['vue-style-loader', 'css-loader']
       },
       {
         test: /\.(woff|woff2|eot|ttf|svg)(\?.*$|$)/,
         loader: 'url-loader?importLoaders=1&limit=100000'
-      },
+      }
     ]
   },
   plugins: [
@@ -36,4 +32,3 @@ module.exports = {
     })
   ]
 }
-
