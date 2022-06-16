@@ -142,11 +142,14 @@ const defaults = {
   logToConsole: false
 }
 
-async function preload(this: any, opts: any) {
-  const { options } = opts
-  this.shared = {} as SharedSenecaState
+async function preload(seneca: any) {
+  const { options } = seneca;
+  seneca.shared = {} as SharedSenecaState
 
-  bootWebServers(this, options)
+  const { expressApp, wsServer } = await bootWebServers(options)
+  seneca.shared.expressApp = expressApp
+  seneca.shared.wsServer = wsServer
+  seneca.shared.expressIsReady = true
 }
 
 Object.assign(debug, { defaults, preload })
