@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 voxgig and other contributors, MIT License */
+/* Copyright (c) 2018-2022 Voxgig and other contributors, MIT License */
 'use strict'
 
 import { textSpanContainsPosition } from "typescript"
@@ -45,11 +45,15 @@ test('happy', async () => {
 
   try {
     await si.post('c:1')
-  } catch (e) {}
+  } catch (e) {
+    expect(e.message).contains('C1')
+  }
+
+  await si.close()
 })
 
 function seneca_instance(fin?: any, testmode?: any) {
-  return Seneca()
+  return Seneca({ death_delay: 0 })
     .test(fin, testmode)
     .use('promisify')
     .use(DebugPlugin, {

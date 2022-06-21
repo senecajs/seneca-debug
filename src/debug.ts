@@ -120,6 +120,14 @@ function debug(this: any, options: any) {
     inward(seneca, finalData, options)
   })
 
+  this.add('role:seneca,cmd:close', function(this: any, _msg: any, reply: any) {
+
+    seneca.shared.expressApp.close()
+    seneca.shared.wsServer.close()
+
+    reply()
+  })
+
   return {
     exports: {
       native: () => ({})
