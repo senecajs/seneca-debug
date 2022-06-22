@@ -1,5 +1,7 @@
-/* Copyright (c) 2018 voxgig and other contributors, MIT License */
+/* Copyright (c) 2018-2022 Voxgig and other contributors, MIT License */
 'use strict'
+
+import { textSpanContainsPosition } from "typescript"
 
 const Util = require('util')
 
@@ -8,21 +10,19 @@ const Code = require('code')
 const lab = (exports.lab = Lab.script())
 const expect = Code.expect
 
+const { Maintain } = require('@seneca/maintain')
+
 const PluginValidator = require('seneca-plugin-validator')
 const Seneca = require('seneca')
 const Optioner = require('optioner')
 const Joi = Optioner.Joi
 
-const Plugin = require('..')
+const DebugPlugin = require('../src/debug');
 
-lab.test(
-  'validate',
-  Util.promisify(function(x, fin) {
-    PluginValidator(Plugin, module)(fin)
-  })
-)
+// undefined bug - Riona is looking through it.
+// test('maintain', Maintain);
 
-lab.test('happy', async () => {
+test('happy', async () => {
   process.argv.push('--seneca.print.tree')
 
   const si = seneca_instance()
@@ -45,18 +45,30 @@ lab.test('happy', async () => {
 
   try {
     await si.post('c:1')
-  } catch (e) {}
+  } catch (e) {
+    expect(e.message).contains('C1')
+  }
 
-  const debug = si.export('debug')
-
-  console.log(debug.print())
+  await si.close()
 })
 
-function seneca_instance(fin, testmode) {
-  return Seneca()
+function seneca_instance(fin?: any, testmode?: any) {
+  return Seneca({ death_delay: 0 })
     .test(fin, testmode)
     .use('promisify')
-    .use(Plugin, { store: true })
+    .use(DebugPlugin, {
+      express: {
+        port: 8899,
+        host: 'localhost'
+      },
+      ws: {
+        port: 8898,
+      },
+      wspath: '/debug',
+      store: false,
+      test: false,
+      prod: false
+    })
     .use('seneca-joi')
     .use('entity')
 }

@@ -124,7 +124,6 @@ export default {
         setTimeout(() => {
           this.handleFlameStack();
         }, 2000)
-        // this.handleFlamegraphData(searchListData);
       }
     },
     handleFlameStack() {

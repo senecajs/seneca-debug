@@ -1,6 +1,5 @@
 import Vue from "vue";
 import App from "./app.vue";
-import Nes from "nes";
 import Vuetify from "vuetify";
 import VueJsonPretty from "vue-json-pretty";
 
@@ -30,7 +29,7 @@ function createApp() {
         app.$root.$emit('msg', JSON.parse(data));
       }
 
-      Vue.prototype.client$ = client;
+      Vue.prototype.client$ = wsClient;
     });
 
   const app = new Vue({
