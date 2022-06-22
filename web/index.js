@@ -6,7 +6,7 @@ function bootWebServers(options) {
     const { express: expOptions, ws: wsConfig, logToConsole } = options;
     const app = Express();
 
-    app.use(Express.static(`${__dirname}/../dist`));
+    app.use(Express.static(`${__dirname}/dist`));
 
     app.get('/', (req, res) => {
       res.sendFile('index.html');
