@@ -7,6 +7,9 @@ var msgmapchildren = {};
 var msgmapdata = {};
 var searchlist = [];
 
+import * as d3 from 'd3';
+import * as d3flamegraph from 'd3-flame-graph';
+
 export default {
   components: {},
   data() {
@@ -16,11 +19,13 @@ export default {
       open: [],
       search_txt: "",
       filter_txt: "",
+      // VITOR
       flamegraphdata: {
         name: "root",
         value: 0,
         children: []
       },
+      flamegraphChart: null,
       flamegraphstack: [],
     };
   },
@@ -127,7 +132,7 @@ export default {
           this.handleFlameStack();
         }, 2000)
         // End
-        
+
       }
     },
 
@@ -259,17 +264,33 @@ export default {
       handlePluginNameInsertion(fullname, actionTime);
       if (!parent) {
         handleActionInsertion(fullname, action, id, null, actionTime);
+        this.buildChart();
       } else {
         setTimeout(() => {
           // Needs to be async because
           // Ordu dispatches first children, then parent.
-          handleActionInsertion(fullname, action, id, parent, actionTime)
+          handleActionInsertion(fullname, action, id, parent, actionTime);
+          this.buildChart();
         }, 1000)
       }
       console.log('final structure: ', this.flamegraphdata);
     },
     // Flamegraph End
 
+    buildChart() {
+      if(!this.flamegraphChart) {
+        const chart = d3flamegraph.flamegraph().width(900);
+        
+        d3
+          .select(this.$refs.graphRef)
+          .datum(this.flamegraphdata)
+          .call(chart)
+        
+        this.flamegraphChart = chart;
+      } else {
+        this.flamegraphChart.update(this.flamegraphdata)
+      }
+    },
 
     search: function() {
       var self = this;
