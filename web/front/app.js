@@ -189,11 +189,20 @@ export default {
         const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name === pluginName);
         if (!pluginIsChildrenAlready) {
           this.flamegraphdata.children.push(buildPluginChildren(pluginName, value));
-        } else {
+        } /*
+        // TODO: Remove this and updatePluginChildren
+        else {
           updatePluginChildren(pluginIsChildrenAlready, value)
-        }
+        } 
+        */
       }
       const handleActionInsertion = (pluginName, action, id, parentId, value) => {
+        const updateBasePlugin = (pluginTree) => {
+          if (!pluginTree || !pluginTree.children || pluginTree.children.length === 0) {
+            return;
+          }
+          pluginTree.value = pluginTree.children.reduce((p, c) => p + c.value, 0);
+        }
         const findActionInChildren = (tree, actionName) => {
           // Simple tree search algorithm.
           const stack = [];
@@ -244,6 +253,8 @@ export default {
             } else {
               updateActionChildren(actionChildren, value, id);
             }
+            updateBasePlugin(pluginTree);
+            // TODO: Remover coidog que atualizar o root$ do plugin ,ele ta bugado
           }
           return;
         }
@@ -253,6 +264,7 @@ export default {
         } else {
           updateActionChildren(actionChildren, value, id);
         }
+        updateBasePlugin(pluginTree);
       }
 
       const { id, text, parent } = searchListData;
