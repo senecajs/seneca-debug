@@ -240,6 +240,7 @@ export default {
 
         const pluginTree = this.flamegraphdata.children.find((c) => c.name === pluginName);
         if (!pluginTree) {
+          console.log('GOT HERE')
           // Ultra edge case that I hope will never occur
           return;
         }
@@ -273,15 +274,15 @@ export default {
       const { action, end, start, instance, pattern, plugin } = meta;
       const { name: pluginShortName, fullname } = plugin;
       const actionTime = end - start;
-      handlePluginNameInsertion(fullname, actionTime);
+      handlePluginNameInsertion(pluginShortName, actionTime);
       if (!parent) {
-        handleActionInsertion(fullname, action, id, null, actionTime);
+        handleActionInsertion(pluginShortName, pattern, id, null, actionTime);
         this.buildChart();
       } else {
         setTimeout(() => {
           // Needs to be async because
           // Ordu dispatches first children, then parent.
-          handleActionInsertion(fullname, action, id, parent, actionTime);
+          handleActionInsertion(pluginShortName, pattern, id, parent, actionTime);
           this.buildChart();
         }, 1000)
       }
