@@ -144,12 +144,6 @@ export default {
       };
     },
     handleFlamegraphData(searchListData) {
-     const updatePluginChildren = (children, value) => {
-      children._inner.count += 1;
-      children._inner.sum += value;
-      children._inner.mean = children._inner.sum / children._inner.count;
-      children.value = children._inner.mean;
-     }
      const updateActionChildren = (children, value, id) => {
       children._inner.count += 1;
       children._inner.ids.push(id);
@@ -189,12 +183,7 @@ export default {
         const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name === pluginName);
         if (!pluginIsChildrenAlready) {
           this.flamegraphdata.children.push(buildPluginChildren(pluginName, value));
-        } /*
-        // TODO: Remove this and updatePluginChildren
-        else {
-          updatePluginChildren(pluginIsChildrenAlready, value)
-        } 
-        */
+        }
       }
       const handleActionInsertion = (pluginName, action, id, parentId, value) => {
         const updateBasePlugin = (pluginTree) => {
@@ -271,22 +260,21 @@ export default {
       const { id, text, parent } = searchListData;
       const info = JSON.parse(text);
       const { meta } = info;
-      const { action, end, start, instance, pattern, plugin } = meta;
-      const { name: pluginShortName, fullname } = plugin;
+      const { end, start, pattern, plugin } = meta;
+      const { name } = plugin;
       const actionTime = end - start;
-      handlePluginNameInsertion(pluginShortName, actionTime);
+      handlePluginNameInsertion(name, actionTime);
       if (!parent) {
-        handleActionInsertion(pluginShortName, pattern, id, null, actionTime);
+        handleActionInsertion(name, pattern, id, null, actionTime);
         this.buildChart();
       } else {
         setTimeout(() => {
           // Needs to be async because
           // Ordu dispatches first children, then parent.
-          handleActionInsertion(pluginShortName, pattern, id, parent, actionTime);
+          handleActionInsertion(name, pattern, id, parent, actionTime);
           this.buildChart();
         }, 1000)
       }
-      console.log('final structure: ', this.flamegraphdata);
     },
     // Flamegraph End
 
