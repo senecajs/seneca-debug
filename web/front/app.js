@@ -153,7 +153,7 @@ export default {
      }
      const buildActionChildren = (name, value, id) => {
       return {
-        name,
+        name: name.toLowerCase(),
         value,
         children: [],
         _inner: {
@@ -167,7 +167,7 @@ export default {
      }
      const buildPluginChildren = (name, value) => {
        return {
-         name,
+         name: name.toLowerCase(),
          value,
          children: [],
          _inner: {
@@ -180,7 +180,7 @@ export default {
        }
      }
       const handlePluginNameInsertion = (pluginName, value) => {
-        const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name === pluginName);
+        const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name.toLowerCase() === pluginName.toLowerCase());
         if (!pluginIsChildrenAlready) {
           this.flamegraphdata.children.push(buildPluginChildren(pluginName, value));
         }
@@ -199,7 +199,7 @@ export default {
           stack.push(tree);
           while (stack.length > 0) {
               node = stack.pop();
-              if (node.name === actionName) {
+              if (node.name.toLowerCase() === actionName.toLowerCase()) {
                   return node;
               } else if (node.children && node.children.length) {
                 for (let treeChildren of node.children) {
@@ -228,15 +228,9 @@ export default {
         }
 
         const pluginTree = this.flamegraphdata.children.find((c) => c.name === pluginName);
-        if (!pluginTree) {
-          console.log('GOT HERE')
-          // Ultra edge case that I hope will never occur
-          return;
-        }
         if (parentId) {
           const parent = findParentById(pluginTree, parentId);
           if (parent) {
-            // TODO IMPROVE THIS
             const actionChildren = findActionInChildren(parent, action);
             if (!actionChildren) {
               parent.children.push(buildActionChildren(action, value, id))
@@ -244,9 +238,8 @@ export default {
               updateActionChildren(actionChildren, value, id);
             }
             updateBasePlugin(pluginTree);
-            // TODO: Remover coidog que atualizar o root$ do plugin ,ele ta bugado
+            return; // Solves a crazy bug
           }
-          return;
         }
         const actionChildren = findActionInChildren(pluginTree, action);
         if (!actionChildren) {
@@ -257,10 +250,14 @@ export default {
         updateBasePlugin(pluginTree);
       }
 
-      const { id, text, parent } = searchListData;
+      const { id, text } = searchListData;
       const info = JSON.parse(text);
       const { meta } = info;
-      const { end, start, pattern, plugin } = meta;
+      const { end, start, pattern, plugin, parents } = meta;
+      let parent = null;
+      if (parents && parents.length) {
+        parent = parents[0][1]
+      }
       const { name } = plugin;
       const actionTime = end - start;
       handlePluginNameInsertion(name, actionTime);
