@@ -57,4 +57,16 @@ typings/
 # dotenv environment variables file
 .env
 
+<<<<<<< master
 *~
+=======
+*~
+
+# Custom
+dist-src/
+
+
+package-lock.json
+yarn.lock
+
+>>>>>>> master
