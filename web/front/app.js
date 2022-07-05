@@ -26,13 +26,15 @@ export default {
         children: []
       },
       flamegraphChart: null,
-      flamegraphstack: [],
     };
   },
   created: function() {
     const self = this;
     this.$root.$on("msg", function(data) {
       self.addmsg(data);
+    });
+    this.$root.$on('flame', function(data) {
+      self.handleFlameChart(data);
     });
   },
   computed: {
@@ -125,156 +127,13 @@ export default {
         }
 
         searchlist.push(searchListData);
-
-        // This will be inside an Ordu // VITOR
-        this.flamegraphstack.push(searchListData);
-        setTimeout(() => {
-          this.handleFlameStack();
-        }, 2000)
-        // End
-
       }
     },
-
-    // Flamegraph Begin // VITOR
-    handleFlameStack() {
-      while (this.flamegraphstack && this.flamegraphstack.length) {
-        const current = this.flamegraphstack.pop();
-        this.handleFlamegraphData(current);
-      };
+    handleFlameChart(data) {
+      const { message } = data;
+      this.flamegraphdata = message;
+      this.buildChart();
     },
-    handleFlamegraphData(searchListData) {
-     const updateActionChildren = (children, value, id) => {
-      children._inner.count += 1;
-      children._inner.ids.push(id);
-      children._inner.sum += value;
-      children._inner.mean = children._inner.sum / children._inner.count;
-      children.value = children._inner.mean;
-     }
-     const buildActionChildren = (name, value, id) => {
-      return {
-        name: name.toLowerCase(),
-        value,
-        children: [],
-        _inner: {
-          count: 1,
-          sum: value,
-          mean: value,
-          layer: 'action',
-          ids: [id]
-        }
-      }
-     }
-     const buildPluginChildren = (name, value) => {
-       return {
-         name: name.toLowerCase(),
-         value,
-         children: [],
-         _inner: {
-           count: 1,
-           sum: value,
-           mean: value,
-           layer: 'plugin',
-           ids: []
-         }
-       }
-     }
-      const handlePluginNameInsertion = (pluginName, value) => {
-        const pluginIsChildrenAlready = this.flamegraphdata.children.find((c) => c.name.toLowerCase() === pluginName.toLowerCase());
-        if (!pluginIsChildrenAlready) {
-          this.flamegraphdata.children.push(buildPluginChildren(pluginName, value));
-        }
-      }
-      const handleActionInsertion = (pluginName, action, id, parentId, value) => {
-        const updateBasePlugin = (pluginTree) => {
-          if (!pluginTree || !pluginTree.children || pluginTree.children.length === 0) {
-            return;
-          }
-          pluginTree.value = pluginTree.children.reduce((p, c) => p + c.value, 0);
-        }
-        const findActionInChildren = (tree, actionName) => {
-          // Simple tree search algorithm.
-          const stack = [];
-          let node;
-          stack.push(tree);
-          while (stack.length > 0) {
-              node = stack.pop();
-              if (node.name.toLowerCase() === actionName.toLowerCase()) {
-                  return node;
-              } else if (node.children && node.children.length) {
-                for (let treeChildren of node.children) {
-                  stack.push(treeChildren);
-                }
-              }
-          }
-          return null;
-        }
-        const findParentById = (tree, parentId) => {
-          // Simple tree search algorithm.
-          const stack = [];
-          let node;
-          stack.push(tree);
-          while (stack.length > 0) {
-              node = stack.pop();
-              if (node._inner.ids.includes(parentId)) {
-                  return node;
-              } else if (node.children && node.children.length) {
-                for (let treeChildren of node.children) {
-                  stack.push(treeChildren);
-                }
-              }
-          }
-          return null;
-        }
-
-        const pluginTree = this.flamegraphdata.children.find((c) => c.name === pluginName);
-        if (parentId) {
-          const parent = findParentById(pluginTree, parentId);
-          if (parent) {
-            const actionChildren = findActionInChildren(parent, action);
-            if (!actionChildren) {
-              parent.children.push(buildActionChildren(action, value, id))
-            } else {
-              updateActionChildren(actionChildren, value, id);
-            }
-            updateBasePlugin(pluginTree);
-            return; // Solves a crazy bug
-          }
-        }
-        const actionChildren = findActionInChildren(pluginTree, action);
-        if (!actionChildren) {
-          pluginTree.children.push(buildActionChildren(action, value, id))
-        } else {
-          updateActionChildren(actionChildren, value, id);
-        }
-        updateBasePlugin(pluginTree);
-      }
-
-      const { id, text } = searchListData;
-      const info = JSON.parse(text);
-      const { meta } = info;
-      const { end, start, pattern, plugin, parents } = meta;
-      let parent = null;
-      if (parents && parents.length) {
-        parent = parents[0][1]
-      }
-      const { name } = plugin;
-      const actionTime = end - start;
-      handlePluginNameInsertion(name, actionTime);
-      if (!parent) {
-        handleActionInsertion(name, pattern, id, null, actionTime);
-        this.buildChart();
-      } else {
-        setTimeout(() => {
-          // Needs to be async because
-          // Ordu dispatches first children, then parent.
-          handleActionInsertion(name, pattern, id, parent, actionTime);
-          this.buildChart();
-        }, 1000)
-      }
-    },
-    // Flamegraph End
-
     buildChart() {
       if(!this.flamegraphChart) {
         const chart = d3flamegraph.flamegraph().width(900);

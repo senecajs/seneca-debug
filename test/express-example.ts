@@ -3,6 +3,7 @@
 const Express = require('express')
 const Seneca = require('seneca')
 import debug from '../src/debug';
+const flame = require('@seneca/flame');
 
 setupSeneca()
 
@@ -11,6 +12,7 @@ function setupSeneca() {
   Seneca()
     .test()
     .use('repl')
+    .use(flame)
     .use(debug, {
       express: {
         port: 8899,
@@ -22,7 +24,8 @@ function setupSeneca() {
       wspath: '/debug',
       store: false,
       test: false,
-      prod: false
+      prod: false,
+      flame: true,
     })
     .add('a:1', function a1(msg, reply, meta) {
       setTimeout(()=>{

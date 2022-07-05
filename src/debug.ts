@@ -7,9 +7,16 @@ type SharedSenecaState = {
   expressIsReady: boolean
   expressServer?: Server
   wsServer?: ws.Server<ws.WebSocket>
+  active: boolean
 }
 
 function inward(seneca: any, spec: any, options: any) {
+  if (spec.data.msg.plugin === 'flame') {
+    return;
+  }
+  if (!seneca.shared.active) {
+    return;
+  }
   const { logToConsole, wspath } = options
   const { data } = spec
   data.debug_kind = 'in'
@@ -56,6 +63,12 @@ function inward(seneca: any, spec: any, options: any) {
 }
 
 function outward(seneca: any, spec: any, options: any) {
+  if (spec.data.msg.plugin === 'flame') {
+    return;
+  }
+  if (!seneca.shared.active) {
+    return;
+  }
   const { logToConsole, wspath } = options
   const { data } = spec
   data.debug_kind = 'out'
@@ -128,6 +141,30 @@ function debug(this: any, options: any) {
     reply()
   })
 
+  this.add('role:seneca,plugin:debug,cmd:toggle', function(this: any, _msg: any, reply: any) {
+    
+    seneca.shared.active = !seneca.shared.active
+
+    reply()
+  });
+
+  const { flame } = seneca.list_plugins();
+  if (flame && options.flame) {
+    setInterval(() => {
+      seneca.act('plugin:flame,command:get', function response(err: any, out: any, meta: any) {
+        if (err) {
+          return;
+        }
+        seneca.shared.wsServer!.clients.forEach((c: any) => {
+          c.send(JSON.stringify({
+            message: out,
+            feature: 'flame'
+          }))
+        })
+      });
+    }, 3000)
+  }
+
   return {
     exports: {
       native: () => ({})
@@ -158,6 +195,7 @@ async function preload(seneca: any) {
   seneca.shared.expressApp = expressApp
   seneca.shared.wsServer = wsServer
   seneca.shared.expressIsReady = true
+  seneca.shared.active = true;
 }
 
 Object.assign(debug, { defaults, preload })

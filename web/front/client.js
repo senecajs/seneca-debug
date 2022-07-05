@@ -26,7 +26,12 @@ function createApp() {
 
       wsClient.onmessage = (event) => {
         const { data } = event;
-        app.$root.$emit('msg', JSON.parse(data));
+        const parsedData = JSON.parse(data);
+        if (parsedData.feature) {
+          app.$root.$emit('flame', parsedData)
+        } else {
+          app.$root.$emit('msg', parsedData);
+        }
       }
 
       Vue.prototype.client$ = wsClient;
