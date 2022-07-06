@@ -26,6 +26,7 @@ export default {
         children: []
       },
       flamegraphChart: null,
+      toggleButtonMessage: 'Stop recording'
     };
   },
   created: function() {
@@ -72,6 +73,19 @@ export default {
       msgmapchildren = {};
       msgmapdata = {};
       this.items.splice(0, this.items.length);
+    },
+    toggle() {
+      fetch(`${this.$root.expressBaseUrl}/toggle`, {
+        method: 'POST'
+      })
+        .then((_) => {
+          if (this.toggleButtonMessage === 'Stop recording') {
+            this.toggleButtonMessage = 'Start recording'
+          } else {
+            this.toggleButtonMessage = 'Stop recording'
+          }
+        })
+        .catch((err) => console.log('err', err))
     },
     load_children: function(data) {
       data.children = msgmapchildren[data.id];

@@ -23,6 +23,8 @@ function createApp() {
     })
     .then(function(config) {
       const wsClient = new WebSocket("ws://localhost:" + config.port);
+      
+      app.$root.expressBaseUrl = `http://localhost:${config.expressPort}`;
 
       wsClient.onmessage = (event) => {
         const { data } = event;

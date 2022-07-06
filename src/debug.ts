@@ -121,6 +121,17 @@ function outward(seneca: any, spec: any, options: any) {
 function debug(this: any, options: any) {
   const seneca = this
 
+  this.init(async function(done: () => any) {
+    seneca.shared = {} as SharedSenecaState
+
+    const { expressApp, wsServer } = await bootWebServers(seneca, options)
+    seneca.shared.expressApp = expressApp
+    seneca.shared.wsServer = wsServer
+    seneca.shared.expressIsReady = true
+    seneca.shared.active = true;
+    done();
+  })
+
   this.outward((ctxt: any, data: any) => {
     const finalData = {} as { data: any }
     finalData.data = ctxt.data || data
@@ -142,10 +153,15 @@ function debug(this: any, options: any) {
   })
 
   this.add('role:seneca,plugin:debug,cmd:toggle', function(this: any, _msg: any, reply: any) {
-    
     seneca.shared.active = !seneca.shared.active
-
-    reply()
+    const { flame } = seneca.list_plugins();
+    if (flame && options.flame) {
+      seneca.act('role:seneca,plugin:flame,cmd:toggle', function cb() {
+        reply()
+      })
+    } else {
+      reply();
+    }
   });
 
   const { flame } = seneca.list_plugins();
@@ -187,16 +203,7 @@ const defaults = {
   logToConsole: false
 }
 
-async function preload(seneca: any) {
-  const { options } = seneca;
-  seneca.shared = {} as SharedSenecaState
-
-  const { expressApp, wsServer } = await bootWebServers(options)
-  seneca.shared.expressApp = expressApp
-  seneca.shared.wsServer = wsServer
-  seneca.shared.expressIsReady = true
-  seneca.shared.active = true;
-}
+async function preload(seneca: any) { }
 
 Object.assign(debug, { defaults, preload })
 
