@@ -6,6 +6,7 @@
           <v-toolbar-title>Messages</v-toolbar-title>
           <v-spacer/>
           <v-btn @click="clear" solo>Clear</v-btn>
+          <v-btn @click="toggle" solo>{{ toggleButtonMessage }}</v-btn>
           <v-spacer/>
           <v-spacer/>
           <v-text-field solo v-model="search_txt" type="search" placeholder="search..." />
@@ -15,6 +16,8 @@
           justify-space-between
           pa-3
           >
+          <textarea v-model="flamegraphdata" rows="8" cols="40"></textarea>
+          <!-- <pre>{{ flamegraphdata | prettyJson }}</pre> -->
           <v-flex xs5>
             <v-treeview
               ref="msgtree"
@@ -89,6 +92,7 @@
           </v-flex>
         </v-layout>
       </v-container>
+      <div style="margin-left: 100px; margin-bottom: 200px" ref="graphRef"></div>
     </v-content>
   </v-app>
 </div>

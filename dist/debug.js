@@ -6,6 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
 const { bootWebServers } = require('../web');
 function inward(seneca, spec, options) {
+    if (spec.data.msg.plugin === 'flame') {
+        return;
+    }
+    if (!seneca.shared.active) {
+        return;
+    }
     const { logToConsole, wspath } = options;
     const { data } = spec;
     data.debug_kind = 'in';
@@ -45,6 +51,12 @@ function inward(seneca, spec, options) {
     });
 }
 function outward(seneca, spec, options) {
+    if (spec.data.msg.plugin === 'flame') {
+        return;
+    }
+    if (!seneca.shared.active) {
+        return;
+    }
     const { logToConsole, wspath } = options;
     const { data } = spec;
     data.debug_kind = 'out';
@@ -86,6 +98,15 @@ function outward(seneca, spec, options) {
 }
 function debug(options) {
     const seneca = this;
+    this.init(async function (done) {
+        seneca.shared = {};
+        const { expressApp, wsServer } = await bootWebServers(seneca, options);
+        seneca.shared.expressApp = expressApp;
+        seneca.shared.wsServer = wsServer;
+        seneca.shared.expressIsReady = true;
+        seneca.shared.active = true;
+        done();
+    });
     this.outward((ctxt, data) => {
         const finalData = {};
         finalData.data = ctxt.data || data;
@@ -101,6 +122,34 @@ function debug(options) {
         seneca.shared.wsServer.close();
         reply();
     });
+    this.add('role:seneca,plugin:debug,cmd:toggle', function (_msg, reply) {
+        seneca.shared.active = !seneca.shared.active;
+        const { flame } = seneca.list_plugins();
+        if (flame && options.flame) {
+            seneca.act('role:seneca,plugin:flame,cmd:toggle', function cb() {
+                reply();
+            });
+        }
+        else {
+            reply();
+        }
+    });
+    const { flame } = seneca.list_plugins();
+    if (flame && options.flame) {
+        setInterval(() => {
+            seneca.act('plugin:flame,command:get', function response(err, out, meta) {
+                if (err) {
+                    return;
+                }
+                seneca.shared.wsServer.clients.forEach((c) => {
+                    c.send(JSON.stringify({
+                        message: out,
+                        feature: 'flame'
+                    }));
+                });
+            });
+        }, 3000);
+    }
     return {
         exports: {
             native: () => ({})
@@ -121,14 +170,7 @@ const defaults = {
     prod: false,
     logToConsole: false
 };
-async function preload(seneca) {
-    const { options } = seneca;
-    seneca.shared = {};
-    const { expressApp, wsServer } = await bootWebServers(options);
-    seneca.shared.expressApp = expressApp;
-    seneca.shared.wsServer = wsServer;
-    seneca.shared.expressIsReady = true;
-}
+async function preload(seneca) { }
 Object.assign(debug, { defaults, preload });
 exports.default = debug;
 if ('undefined' !== typeof module) {
