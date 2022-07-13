@@ -117,16 +117,17 @@ function debug(options) {
         finalData.data = ctxt.data || data;
         inward(seneca, finalData, options);
     });
-    this.add('role:seneca,cmd:close', function (_msg, reply) {
+    this.add('role:seneca,cmd:close', function closeDebug(_msg, reply) {
         seneca.shared.expressApp.close();
         seneca.shared.wsServer.close();
         reply();
     });
-    this.add('role:seneca,plugin:debug,cmd:toggle', function (_msg, reply) {
-        seneca.shared.active = !seneca.shared.active;
+    this.add('sys:debug,area:trace', function debugTraceActivation(msg, reply) {
+        const { active } = msg;
+        seneca.shared.active = Boolean(active);
         const { flame } = seneca.list_plugins();
         if (flame && options.flame) {
-            seneca.act('role:seneca,plugin:flame,cmd:toggle', function cb() {
+            seneca.act(`sys:flame,capture:${active}`, function cb() {
                 reply();
             });
         }
@@ -150,24 +151,29 @@ function debug(options) {
             });
         }, 3000);
     }
-    return {
-        exports: {
-            native: () => ({})
-        }
-    };
 }
 const defaults = {
+    /*
+     * Express server config
+    */
     express: {
         port: 8899,
         host: 'localhost'
     },
+    /*
+     * WebSocket server config
+    */
     ws: {
         port: 8898
     },
-    internLog: false,
+    /*
+     * WebSocket path to push data
+    */
     wspath: '/debug',
-    test: false,
     prod: false,
+    /*
+     * Will log the metadata to the console
+    */
     logToConsole: false
 };
 async function preload(seneca) { }

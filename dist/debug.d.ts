@@ -1,6 +1,2 @@
-declare function debug(this: any, options: any): {
-    exports: {
-        native: () => {};
-    };
-};
+declare function debug(this: any, options: any): void;
 export default debug;
