@@ -75,7 +75,8 @@ export default {
       this.items.splice(0, this.items.length);
     },
     toggle() {
-      fetch(`${this.$root.expressBaseUrl}/toggle`, {
+      const active = this.toggleButtonMessage === 'Stop recording' ? false : true;
+      fetch(`${this.$root.expressBaseUrl}/toggle?active=${active}`, {
         method: 'POST'
       })
         .then((_) => {

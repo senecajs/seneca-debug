@@ -1,14 +1,5 @@
 import Stringify from 'json-stringify-safe'
-import { Server } from 'node:http'
-import ws from 'ws'
 const { bootWebServers } = require('../web')
-
-type SharedSenecaState = {
-  expressIsReady: boolean
-  expressServer?: Server
-  wsServer?: ws.Server<ws.WebSocket>
-  active: boolean
-}
 
 function inward(seneca: any, spec: any, options: any) {
   if (spec.data.msg.plugin === 'flame') {
@@ -122,7 +113,7 @@ function debug(this: any, options: any) {
   const seneca = this
 
   this.init(async function(done: () => any) {
-    seneca.shared = {} as SharedSenecaState
+    seneca.shared = {} as Record<string, any>
 
     const { expressApp, wsServer } = await bootWebServers(seneca, options)
     seneca.shared.expressApp = expressApp
@@ -144,7 +135,7 @@ function debug(this: any, options: any) {
     inward(seneca, finalData, options)
   })
 
-  this.add('role:seneca,cmd:close', function(this: any, _msg: any, reply: any) {
+  this.add('role:seneca,cmd:close', function closeDebug(this: any, _msg: any, reply: any) {
 
     seneca.shared.expressApp.close()
     seneca.shared.wsServer.close()
@@ -152,11 +143,12 @@ function debug(this: any, options: any) {
     reply()
   })
 
-  this.add('role:seneca,plugin:debug,cmd:toggle', function(this: any, _msg: any, reply: any) {
-    seneca.shared.active = !seneca.shared.active
+  this.add('sys:debug,area:trace', function debugTraceActivation(this: any, msg: any, reply: any) {
+    const { active } = msg;
+    seneca.shared.active = Boolean(active)
     const { flame } = seneca.list_plugins();
     if (flame && options.flame) {
-      seneca.act('role:seneca,plugin:flame,cmd:toggle', function cb() {
+      seneca.act(`sys:flame,capture:${active}`, function cb() {
         reply()
       })
     } else {
@@ -180,26 +172,30 @@ function debug(this: any, options: any) {
       });
     }, 3000)
   }
-
-  return {
-    exports: {
-      native: () => ({})
-    }
-  }
 }
 
 const defaults = {
+  /*
+   * Express server config
+  */
   express: {
     port: 8899,
     host: 'localhost'
   },
+  /*
+   * WebSocket server config
+  */
   ws: {
     port: 8898
   },
-  internLog: false,
+  /*
+   * WebSocket path to push data
+  */
   wspath: '/debug',
-  test: false,
   prod: false,
+  /*
+   * Will log the metadata to the console
+  */
   logToConsole: false
 }
 

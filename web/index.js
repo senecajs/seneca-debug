@@ -20,8 +20,9 @@ function bootWebServers(seneca, options) {
     });
 
     app.post('/toggle', (req, res) => {
-      seneca.act('role:seneca,plugin:debug,cmd:toggle', function cb() {
-        return res.status(200).json({ ok: true });
+      const active = req.query.active || "false"
+      seneca.act(`sys:debug,area:trace,active:${active}`, function cb() {
+        return res.status(200).json({ ok: true })
       })
     })
 
