@@ -7,6 +7,9 @@ var msgmapchildren = {};
 var msgmapdata = {};
 var searchlist = [];
 
+import * as d3 from 'd3';
+import * as d3flamegraph from 'd3-flame-graph';
+
 export default {
   components: {},
   data() {
@@ -15,13 +18,24 @@ export default {
       active: [],
       open: [],
       search_txt: "",
-      filter_txt: ""
+      filter_txt: "",
+      // VITOR
+      flamegraphdata: {
+        name: "root",
+        value: 0,
+        children: []
+      },
+      flamegraphChart: null,
+      toggleButtonMessage: 'Stop recording'
     };
   },
   created: function() {
     const self = this;
     this.$root.$on("msg", function(data) {
       self.addmsg(data);
+    });
+    this.$root.$on('flame', function(data) {
+      self.handleFlameChart(data);
     });
   },
   computed: {
@@ -41,6 +55,14 @@ export default {
     },
     filter_txt: function() {
       this.$root.$emit("filter", this.filter_txt);
+    },
+  },
+  filters: {
+    prettyJson(value) {
+      if (!value) {
+        return '';
+      }
+      return JSON.stringify(value, null, 2);
     }
   },
 
@@ -51,6 +73,20 @@ export default {
       msgmapchildren = {};
       msgmapdata = {};
       this.items.splice(0, this.items.length);
+    },
+    toggle() {
+      const active = this.toggleButtonMessage === 'Stop recording' ? false : true;
+      fetch(`${this.$root.expressBaseUrl}/toggle?active=${active}`, {
+        method: 'POST'
+      })
+        .then((_) => {
+          if (this.toggleButtonMessage === 'Stop recording') {
+            this.toggleButtonMessage = 'Start recording'
+          } else {
+            this.toggleButtonMessage = 'Stop recording'
+          }
+        })
+        .catch((err) => console.log('err', err))
     },
     load_children: function(data) {
       data.children = msgmapchildren[data.id];
@@ -99,16 +135,36 @@ export default {
         msgmapdata[meta.id].data.meta.end = meta.end;
         msgmapdata[meta.id].data.result_length = data.result_length;
 
-        searchlist.push({
+        const searchListData = {
           id: meta.id,
           text: JSON.stringify(msgmapdata[meta.id].data).toLowerCase(),
           parent: parent
-        });
+        }
+
+        searchlist.push(searchListData);
+      }
+    },
+    handleFlameChart(data) {
+      const { message } = data;
+      this.flamegraphdata = message;
+      this.buildChart();
+    },
+    buildChart() {
+      if(!this.flamegraphChart) {
+        const chart = d3flamegraph.flamegraph().width(900);
+        
+        d3
+          .select(this.$refs.graphRef)
+          .datum(this.flamegraphdata)
+          .call(chart)
+        
+        this.flamegraphChart = chart;
+      } else {
+        this.flamegraphChart.update(this.flamegraphdata)
       }
     },
 
     search: function() {
-      console.log("search");
       var self = this;
       self.term = this.search_txt.toLowerCase();
 

@@ -57,12 +57,9 @@ typings/
 # dotenv environment variables file
 .env
 
-*~
-
 # Custom
 dist-src/
 
 
 package-lock.json
 yarn.lock
-

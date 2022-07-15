@@ -3,10 +3,10 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin')
 
 module.exports = {
   mode: 'development',
-  context: __dirname + '/web/front',
-  entry: __dirname + '/web/front/client.js',
+  context: __dirname + '/front',
+  entry: __dirname + '/front/client.js',
   output: {
-    path: __dirname + '/web/dist',
+    path: __dirname + '/dist',
   },
   module: {
     rules: [
