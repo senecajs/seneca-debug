@@ -138,7 +138,7 @@ function debug(options) {
     const { flame } = seneca.list_plugins();
     if (flame && options.flame) {
         setInterval(() => {
-            seneca.act('plugin:flame,command:get', function response(err, out, meta) {
+            seneca.act('plugin:flame,command:get,cached:true', function response(err, out, meta) {
                 if (err) {
                     return;
                 }

@@ -19,14 +19,14 @@ export default {
       open: [],
       search_txt: "",
       filter_txt: "",
-      // VITOR
       flamegraphdata: {
         name: "root",
         value: 0,
         children: []
       },
       flamegraphChart: null,
-      toggleButtonMessage: 'Stop recording'
+      toggleButtonMessage: 'Stop recording',
+      allowChartUpdate: true,
     };
   },
   created: function() {
@@ -157,10 +157,20 @@ export default {
           .select(this.$refs.graphRef)
           .datum(this.flamegraphdata)
           .call(chart)
+
+        chart.onClick((d) => {
+          if (d.data.name !== 'root') {
+            this.allowChartUpdate = false;
+          } else {
+            this.allowChartUpdate = true;
+          }
+        })
         
         this.flamegraphChart = chart;
       } else {
-        this.flamegraphChart.update(this.flamegraphdata)
+        if (this.allowChartUpdate) {
+          this.flamegraphChart.update(this.flamegraphdata)
+        }
       }
     },
 

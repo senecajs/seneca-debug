@@ -30,7 +30,9 @@ function createApp() {
         const { data } = event;
         const parsedData = JSON.parse(data);
         if (parsedData.feature) {
-          app.$root.$emit('flame', parsedData)
+          if (parsedData.message.children) {
+            app.$root.$emit('flame', parsedData)
+          }
         } else {
           app.$root.$emit('msg', parsedData);
         }
