@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
 const { bootWebServers } = require('../web');
 function inward(seneca, spec, options) {
-    if (spec.data.msg.plugin === 'flame') {
+    const pluginName = spec.data.msg['plugin$'];
+    if (pluginName && pluginName.name && pluginName.name === 'debug') {
         return;
     }
     if (!seneca.shared.active) {
@@ -51,7 +52,8 @@ function inward(seneca, spec, options) {
     });
 }
 function outward(seneca, spec, options) {
-    if (spec.data.msg.plugin === 'flame') {
+    const pluginName = spec.data.msg['plugin$'];
+    if (pluginName && pluginName.name && pluginName.name === 'debug') {
         return;
     }
     if (!seneca.shared.active) {
@@ -138,7 +140,7 @@ function debug(options) {
     const { flame } = seneca.list_plugins();
     if (flame && options.flame) {
         setInterval(() => {
-            seneca.act('plugin:flame,command:get,cached:true', function response(err, out, meta) {
+            seneca.act('sys:flame,cmd:get,cached:true', function response(err, out, meta) {
                 if (err) {
                     return;
                 }

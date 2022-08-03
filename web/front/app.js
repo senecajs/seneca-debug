@@ -9,9 +9,14 @@ var searchlist = [];
 
 import * as d3 from 'd3';
 import * as d3flamegraph from 'd3-flame-graph';
+import * as d3tooltip from 'd3-flame-graph/src/tooltip';
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 export default {
-  components: {},
+  components: {
+    VueJsonPretty,
+  },
   data() {
     return {
       items: top.items,
@@ -151,7 +156,14 @@ export default {
     },
     buildChart() {
       if(!this.flamegraphChart) {
-        const chart = d3flamegraph.flamegraph().width(900);
+        const chart = d3flamegraph.flamegraph().width(screen.width * 0.90);
+
+        chart.label(d => {
+          const { data } = d;
+          const { name, value, _inner } = data;
+          const { count } = _inner
+          return `Action name: ${name}  |  Average execution time: ${value}  |  Number of executions:${count}`;
+        })
         
         d3
           .select(this.$refs.graphRef)

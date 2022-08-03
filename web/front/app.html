@@ -16,9 +16,7 @@
           justify-space-between
           pa-3
           >
-          <textarea v-model="flamegraphdata" rows="8" cols="40"></textarea>
-          <!-- <pre>{{ flamegraphdata | prettyJson }}</pre> -->
-          <v-flex xs5>
+          <v-flex>
             <v-treeview
               ref="msgtree"
               :active.sync="active"
@@ -29,6 +27,7 @@
               :load-children="load_children"
               transition
               activatable
+              style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
               >
               <template v-slot:prepend="{ item, open }">
                 {{ item.num_children }}
@@ -51,11 +50,11 @@
                 class="pt-4 mx-auto"
                 flat
                 max-width="50vw"
-                max-height="96vh"
-                style="overflow:scroll;position:sticky;top:0px;margin-bottom:1vh;border-top:1vh solid black;;border-bottom:1vh solid black"
+                max-height="calc(80vh)"
+                style="overflow-y:scroll;overflow-x:auto;position:sticky;top:0px;"
                 >
                 <v-card-text>
-                  <h3 class="headline mb-2">{{ selected.name }}</h3>
+                  <h3 class="headline mb-2">Data</h3>
                   <vue-json-pretty
                     :deep="3"
                     :data="selected.data.msg"
@@ -66,7 +65,7 @@
                 <v-divider></v-divider>
 
                 <v-card-text>
-                  <h4 class="headline mb-2">result</h4>
+                  <h4 class="headline mb-2">Result</h4>
 
                   <div v-if="selected.data.result_length">Result size {{selected.data.result_length}} (not sent for performance)</div>
                   <vue-json-pretty
@@ -78,7 +77,7 @@
 
                 <v-divider></v-divider>
                 <v-card-text>
-                  <h4 class="headline mb-2">meta</h4>
+                  <h4 class="headline mb-2">Meta</h4>
 
                   <vue-json-pretty
                     :deep="3"
@@ -92,7 +91,9 @@
           </v-flex>
         </v-layout>
       </v-container>
-      <div style="margin-left: 100px; margin-bottom: 200px" ref="graphRef"></div>
+      <div style="margin: 50px 15px; max-width: calc(80vw)">
+        <div ref="graphRef"></div>
+      </div>
     </v-content>
   </v-app>
 </div>
