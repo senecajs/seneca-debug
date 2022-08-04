@@ -2,7 +2,8 @@ import Stringify from 'json-stringify-safe'
 const { bootWebServers } = require('../web')
 
 function inward(seneca: any, spec: any, options: any) {
-  if (spec.data.msg.plugin === 'flame') {
+  const pluginName = spec.data.msg['plugin$'];
+  if (pluginName && pluginName.name && pluginName.name === 'debug') {
     return;
   }
   if (!seneca.shared.active) {
@@ -54,7 +55,8 @@ function inward(seneca: any, spec: any, options: any) {
 }
 
 function outward(seneca: any, spec: any, options: any) {
-  if (spec.data.msg.plugin === 'flame') {
+  const pluginName = spec.data.msg['plugin$'];
+  if (pluginName && pluginName.name && pluginName.name === 'debug') {
     return;
   }
   if (!seneca.shared.active) {
@@ -159,7 +161,7 @@ function debug(this: any, options: any) {
   const { flame } = seneca.list_plugins();
   if (flame && options.flame) {
     setInterval(() => {
-      seneca.act('plugin:flame,command:get', function response(err: any, out: any, meta: any) {
+      seneca.act('sys:flame,cmd:get,cached:true', function response(err: any, out: any, meta: any) {
         if (err) {
           return;
         }
