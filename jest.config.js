@@ -1,7 +1,6 @@
+/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
-  transform: {
-    "^.+\\.tsx?$": ["esbuild-jest", {sourcemap:true}]
-  },
+  preset: 'ts-jest',
   testEnvironment: 'node',
   testMatch: ['**/test/**/*.test.ts', '**/test/**/*.test.js'],
   // testMatch: ['./test/*.test.js']
