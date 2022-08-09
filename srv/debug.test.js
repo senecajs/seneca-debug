@@ -1,5 +1,6 @@
 
 const Seneca = require('seneca')
+const debug = require('../dist/debug');
 
 setup()
 
@@ -11,7 +12,7 @@ async function setup() {
     .use('promisify')
     .use('seneca-joi')
     .use('entity')
-    .use('..', {test: true})
+    .use('debug', {test: true})
 
     .message('a:1', async function(msg) {
       return {x:msg.x}
