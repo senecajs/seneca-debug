@@ -36,22 +36,22 @@
     "node": ">=8"
   },
   "dependencies": {
-    "@seneca/repl": "^4.0.1",
+    "@seneca/repl": "^5.0.1",
     "babel-runtime": "^6.26.0",
-    "d3": "7.4.4",
+    "d3": "7.6.1",
     "d3-flame-graph": "4.1.3",
     "express": "^4.18.1",
-    "material-design-icons-iconfont": "^5.0.1",
-    "typescript": "^4.7.3",
+    "material-design-icons-iconfont": "^6.7.0",
+    "typescript": "^4.7.4",
     "vue": "^2.6.10",
     "vue-json-pretty": "^1.6.0",
     "vuetify": "^1.5.14",
-    "ws": "^8.7.0"
+    "ws": "^8.8.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.4.5",
+    "@babel/core": "^7.18.10",
     "@types/express": "^4.17.13",
-    "@types/jest": "^28.1.1",
+    "@types/jest": "^28.1.6",
     "@types/ws": "^8.5.3",
     "babel-loader": "8",
     "code": "5",
@@ -61,16 +61,16 @@
     "esbuild-jest": "^0.5.0",
     "file-loader": "^4.1.0",
     "html-webpack-plugin": "3",
-    "jest": "^28.1.1",
+    "jest": "^28.1.3",
     "lab": "^18.0.2",
-    "prettier": "1",
+    "prettier": "2",
     "url-loader": "^2.1.0",
     "vue-loader": "^15.7.0",
     "vue-style-loader": "4",
     "vue-template-compiler": "^2.6.10",
     "webpack": "4",
-    "webpack-cli": "3",
-    "webpack-merge": "4",
-    "webpack-node-externals": "1"
+    "webpack-cli": "4",
+    "webpack-merge": "5",
+    "webpack-node-externals": "3"
   }
 }

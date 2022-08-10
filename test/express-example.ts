@@ -11,14 +11,14 @@ function setupSeneca() {
   Seneca()
     .test()
     .use('repl')
-    .use('flame')
+    .use('flame', { capture: true })
     .use(Debug, {
       express: {
-        port: 8899,
+        port: 8008,
         host: 'localhost'
       },
       ws: {
-        port: 8898,
+        port: 8007,
       },
       wspath: '/debug',
       store: false,
@@ -60,5 +60,5 @@ function setupExpress(seneca) {
         res.send({ ...out, t:Date.now() })
       })
     })
-    .listen(8000)
+    .listen(8006)
 }

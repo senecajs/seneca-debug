@@ -1,8 +1,6 @@
 /* Copyright (c) 2018-2022 Voxgig and other contributors, MIT License */
 'use strict'
 
-import { textSpanContainsPosition } from "typescript"
-
 const Util = require('util')
 
 const Lab = require('lab')
@@ -52,17 +50,17 @@ test('happy', async () => {
   await si.close()
 })
 
-function seneca_instance(fin?: any, testmode?: any) {
+function seneca_instance(fin, testmode) {
   return Seneca({ death_delay: 0 })
     .test(fin, testmode)
     .use('promisify')
     .use(DebugPlugin, {
       express: {
-        port: 8899,
+        port: 9099,
         host: 'localhost'
       },
       ws: {
-        port: 8898,
+        port: 9098,
       },
       wspath: '/debug',
       store: false,
