@@ -28,9 +28,9 @@
   "files": [
     "LICENSE",
     "README.md",
-    "debug.js",
     "lib/errors.js",
-    "dist"
+    "dist",
+    "web"
   ],
   "engines": {
     "node": ">=8"
