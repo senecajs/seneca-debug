@@ -32,6 +32,7 @@ export default {
       flamegraphChart: null,
       toggleButtonMessage: 'Stop recording',
       allowChartUpdate: true,
+      showDrilldownAlert: false,
     };
   },
   created: function() {
@@ -52,6 +53,13 @@ export default {
   },
 
   watch: {
+    showDrilldownAlert(v) {
+      if (v) {
+        setTimeout(() => {
+          this.showDrilldownAlert = false;
+        }, 1000)
+      }
+    },
     "items.length": function() {
       if (this.search_txt) this.search();
     },
@@ -154,6 +162,70 @@ export default {
       this.flamegraphdata = message;
       this.buildChart();
     },
+    getIdsFromChartNode(node) {
+      const { data } = node;
+      const { _inner } = data;
+      const { ids } = _inner;
+      return ids;
+    },
+    getMessageMapParentListFromId(id) {
+      let currentId = id;
+      const data = [currentId];
+      const findParentById = (id) => {
+        for (const parentId in msgmapchildren) {
+          for (const children of msgmapchildren[parentId]) {
+            if (children.id === id) {
+              return parentId;
+            }
+          }
+        }
+        return null;
+      }
+      while (true) {
+        const parentId = findParentById(currentId);
+        if (!parentId) {
+          break;
+        }
+        currentId = parentId;
+        data.push(currentId);
+      }
+      return data.reverse();
+    },
+    applyDrilldown(chartNode) {
+      const nodeIds = this.getIdsFromChartNode(chartNode);
+      if (nodeIds.length) {
+        nodeIds.forEach((nodeId) => {
+          const elem = this.getMessageMapParentListFromId(nodeId);
+
+          const tree = this.$refs.msgtree.nodes;
+          const treeObjectKeyNames = Object.keys(tree);
+          for (const treeKey of treeObjectKeyNames) {
+            const node = tree[treeKey];
+            if (!node) {
+              continue;
+            }
+            const vnodeEl = node.vnode.$el;
+            if (!elem.includes(treeKey)) {
+              vnodeEl.classList.add("hide")
+            } else {
+              vnodeEl.classList.remove("hide")
+            }
+          }
+        });
+      } else {
+        const tree = this.$refs.msgtree.nodes;
+        const treeObjectKeyNames = Object.keys(tree);
+        for (const treeKey of treeObjectKeyNames) {
+          const node = tree[treeKey];
+          if (!node) {
+            continue;
+          }
+          const vnodeEl = node.vnode.$el;
+          vnodeEl.classList.remove("hide")
+        }
+      }
+      this.showDrilldownAlert = true;
+    },
     buildChart() {
       if(!this.flamegraphChart) {
         const chart = d3flamegraph.flamegraph().width(screen.width * 0.90);
@@ -170,8 +242,10 @@ export default {
           .datum(this.flamegraphdata)
           .call(chart)
 
-        chart.onClick((d) => {
-          if (d.data.name !== 'root') {
+        chart.onClick((node) => {
+          this.applyDrilldown(node);
+          
+          if (node.data.name !== 'root') {
             this.allowChartUpdate = false;
           } else {
             this.allowChartUpdate = true;

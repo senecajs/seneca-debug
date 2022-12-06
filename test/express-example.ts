@@ -45,6 +45,11 @@ function setupSeneca() {
         reply({x:1+msg.x})
       }, 400+(400*Math.random()))
     })
+    .add('c:1', function c1(msg, reply, meta) {
+      setTimeout(()=>{
+        reply({x:1+msg.x})
+      }, 400+(400*Math.random()))
+    })
     .ready(function() {
       setupExpress(this)
     })
@@ -57,6 +62,13 @@ function setupExpress(seneca) {
       let x = parseInt(req.query.x || 1)
 
       seneca.act('a:1', {x}, function p1r(err, out, meta) {
+        res.send({ ...out, t:Date.now() })
+      })
+    })
+    .get('/p2', function p2(req, res) {
+      let x = parseInt(req.query.x || 1)
+
+      seneca.act('c:1', {x}, function p1r(err, out, meta) {
         res.send({ ...out, t:Date.now() })
       })
     })
