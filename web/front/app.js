@@ -33,6 +33,7 @@ export default {
       toggleButtonMessage: 'Stop recording',
       allowChartUpdate: true,
       showDrilldownAlert: false,
+      currentClickedStackTracePath: null,
     }
   },
   created: function() {
@@ -53,6 +54,14 @@ export default {
   },
 
   watch: {
+    currentClickedStackTracePath(prevClicked) {
+      if (!prevClicked) {
+        return;
+      }
+      setTimeout(() => {
+        this.currentClickedStackTracePath = null;
+      }, 300)
+    },
     showDrilldownAlert(prevShowDrilldownAlertValue) {
       if (prevShowDrilldownAlertValue) {
         setTimeout(() => {
@@ -80,6 +89,38 @@ export default {
   },
 
   methods: {
+    handleMetaDataClick(nodeData) {
+      const { content, path } = nodeData;
+      if (!this.currentClickedStackTracePath) {
+        this.currentClickedStackTracePath = content;
+        return;
+      }
+      const possiblePaths = ['root.trace_stack[', 'root.needle_stack['];
+      const clickedInMetadata = possiblePaths.reduce((p, c) => {
+        return p || path.includes(c)
+      }, false);
+      if (!clickedInMetadata) {
+        return;
+      }
+      const callPath = content.split(' ').find((str) => str[0] === '(' && str[str.length - 1] === ')');
+      if (!callPath) {
+        return;
+      }
+      const finalPath = callPath.substring(1, callPath.length - 1);
+      fetch(`${this.$root.expressBaseUrl}/open-vscode`, {
+        method: 'POST',
+        body: JSON.stringify({ path: finalPath }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .then((r) => {
+          console.log('aqui', r)
+        })
+        .catch((err) => {
+          console.log('err', err)
+        })
+    },
     clear: function() {
       searchlist = []
       msgmap = {}

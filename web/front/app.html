@@ -86,6 +86,16 @@
 
                 <v-divider></v-divider>
                 <v-card-text>
+                  <h4 class="headline mb-2">Stack Trace<span class="ml-2 caption grey--text darken-1">(Double click to open in VSCode)</span></h4>
+
+                  <vue-json-pretty
+                    :deep="3"
+                    :data="selected.data.trace"
+                    @node-click="handleMetaDataClick"
+                    >
+                  </vue-json-pretty>
+                </v-card-text>
+                <v-card-text>
                   <h4 class="headline mb-2">Meta</h4>
 
                   <vue-json-pretty
