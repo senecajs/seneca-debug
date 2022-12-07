@@ -27,5 +27,11 @@
   bottom: 30px;
   right: 10%;
 }
+.treeNodeLabel {
+  max-width: 33vw;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 0;
+}
 
 </style>

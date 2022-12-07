@@ -39,6 +39,12 @@
                 </v-icon>
               </template>
 
+              <template v-slot:label="{ item }">
+                <p class="treeNodeLabel">
+                  {{ item.name }}
+                </p>
+              </template>
+
               <template v-slot:append="{ item, open }">
                 {{item.duration}}ms
               </template>
