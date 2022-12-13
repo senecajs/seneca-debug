@@ -20,6 +20,15 @@
           pa-3
           >
           <v-flex>
+            <v-card v-if="drilldownPath.length">
+              <v-card-title class="headline font-weight-bold">Drilldown filter pattern:</v-card-title>
+              <div style="margin-left: 16px">
+              <v-card-text class="drilldownParagraph" style="padding-right: 0px; padding-left: 0px" v-for="(item, index) in drilldownPath">
+                <p class="drilldownParagraph subheading">{{item}}</p>
+                <p class="drilldownParagraph caption grey--text darken-1" v-if="index !== (drilldownPath.length - 1)"> => </p>
+              </v-card-text>
+            </div>
+            </v-card>
             <v-treeview
               ref="msgtree"
               :active.sync="active"

@@ -34,6 +34,7 @@ export default {
       allowChartUpdate: true,
       showDrilldownAlert: false,
       currentClickedStackTracePath: null,
+      drilldownPath: [],
     }
   },
   created: function() {
@@ -232,9 +233,47 @@ export default {
       }
       return data.reverse()
     },
+    setDrilldownMessage(chartNode) {
+      const getPatternName = (name) => {
+        const splitted = name.split(" : ")
+        if (!splitted || splitted.length !== 2) {
+          return ""
+        }
+        return splitted[1].trim()
+      }
+
+      let chartDrilldown = []
+      let currentNode = chartNode
+      while (true) {
+        const { data, parent } = currentNode;
+        const patternName = getPatternName(data.name)
+        if (!patternName) {
+          break;
+        }
+        chartDrilldown.push(patternName);
+        if (!parent) {
+          break;
+        }
+        currentNode = parent;
+      }
+      this.drilldownPath = chartDrilldown;
+    },
     applyDrilldown(chartNode) {
       const nodeIds = this.getIdsFromChartNode(chartNode)
       if (nodeIds.length) {
+
+        const clearVnodeClasses = () => {
+          const tree = this.$refs.msgtree.nodes
+          Object.keys(tree).forEach((treeKey) => {
+            const node = tree[treeKey];
+            const vnodeEl = node.vnode.$el
+            if (vnodeEl) {
+              vnodeEl.classList.remove('unhidable')
+            }
+          })
+        }
+        clearVnodeClasses()  
+
         nodeIds.forEach((nodeId) => {
           const elem = this.getMessageMapParentListFromId(nodeId)
 
@@ -246,13 +285,20 @@ export default {
               continue
             }
             const vnodeEl = node.vnode.$el
+            if (!vnodeEl) {
+              continue
+            }
             if (!elem.includes(treeKey)) {
-              vnodeEl.classList.add('hide')
+              if (!vnodeEl.classList.contains('unhidable')) {
+                vnodeEl.classList.add('hide')
+              }
             } else {
               vnodeEl.classList.remove('hide')
+              vnodeEl.classList.add('unhidable')
             }
           }
         })
+        this.setDrilldownMessage(chartNode);
       } else {
         const tree = this.$refs.msgtree.nodes
         const treeObjectKeyNames = Object.keys(tree)
@@ -262,8 +308,11 @@ export default {
             continue
           }
           const vnodeEl = node.vnode.$el
-          vnodeEl.classList.remove('hide')
+          if (vnodeEl) {
+            vnodeEl.classList.remove('hide')
+          }
         }
+        this.drilldownPath = []
       }
       this.showDrilldownAlert = true
     },
