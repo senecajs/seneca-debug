@@ -29,6 +29,13 @@ function bootWebServers(seneca, options) {
       })
     })
 
+    app.post('/toggle-flame', (req, res) => {
+      const active = req.query.active || "false"
+      seneca.act(`sys:flame,capture:${active}`, function cb() {
+        return res.status(200).json({ ok: true });
+      })
+    })
+
     app.post('/open-vscode', (req, res) => {
       const { path } = req.body;
       exec(`code -g ${path}`, (err) => {
@@ -36,6 +43,12 @@ function bootWebServers(seneca, options) {
           return res.status(500).json({ error: err });
         }
         return res.status(200);
+      })
+    })
+
+    app.get('/flame-capture-status', (req, res) => {
+      seneca.act('sys:flame,cmd:capture_status', function cb(err, cbRes) {
+        return res.status(200).json(cbRes);
       })
     })
 

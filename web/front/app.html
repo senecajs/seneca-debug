@@ -10,6 +10,7 @@
           <v-spacer/>
           <v-btn @click="clear" solo>Clear</v-btn>
           <v-btn @click="toggle" solo>{{ toggleButtonMessage }}</v-btn>
+          <v-btn @click="toggleFlamechartCapture" solo>{{ flamechartCaptureStatus }}</v-btn>
           <v-spacer/>
           <v-spacer/>
           <v-text-field solo v-model="search_txt" type="search" placeholder="search..." />

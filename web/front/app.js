@@ -35,12 +35,34 @@ export default {
       showDrilldownAlert: false,
       currentClickedStackTracePath: null,
       drilldownPath: [],
+      currentSelectedFlamechartNode: null,
+      flamechartCaptureStatus: "",
     }
   },
   created: function() {
     const self = this
+
+    fetch(`/flame-capture-status`, {
+      method: 'GET',
+    })
+      .then((rawResponse) => {
+        rawResponse.json().then(({ status }) => {
+          if (status) {
+            self.flamechartCaptureStatus = "Stop Flame Data Capture";
+          } else {
+            self.flamechartCaptureStatus = "Start Flame Data Capture";
+          }
+        })
+      })
+      .catch((err) => {
+        console.log('err', err)
+      })
+
     this.$root.$on('msg', function(data) {
       self.addmsg(data)
+      if (self.currentSelectedFlamechartNode) {
+        self.applyDrilldown(self.currentSelectedFlamechartNode);
+      }
     })
     this.$root.$on('flame', function(data) {
       self.handleFlameChart(data)
@@ -115,9 +137,6 @@ export default {
           'Content-Type': 'application/json',
         },
       })
-        .then((r) => {
-          console.log('aqui', r)
-        })
         .catch((err) => {
           console.log('err', err)
         })
@@ -139,6 +158,20 @@ export default {
             this.toggleButtonMessage = 'Start recording'
           } else {
             this.toggleButtonMessage = 'Stop recording'
+          }
+        })
+        .catch((err) => console.log('err', err))
+    },
+    toggleFlamechartCapture() {
+      const active = this.flamechartCaptureStatus === "Stop Flame Data Capture" ? false : true;
+      fetch(`/toggle-flame?active=${active}`, {
+        method: 'POST'
+      })
+        .then(() => {
+          if (this.flamechartCaptureStatus === "Stop Flame Data Capture") {
+            this.flamechartCaptureStatus = "Start Flame Data Capture";
+          } else {
+            this.flamechartCaptureStatus = "Stop Flame Data Capture";
           }
         })
         .catch((err) => console.log('err', err))
@@ -333,6 +366,7 @@ export default {
           .call(chart)
 
         chart.onClick((node) => {
+          this.currentSelectedFlamechartNode = node;
           this.applyDrilldown(node)
           
           if (node.data.name !== 'root') {

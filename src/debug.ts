@@ -1,4 +1,5 @@
 import Stringify from 'json-stringify-safe'
+import { Open } from 'gubu'
 const { bootWebServers } = require('../web')
 
 function inward(seneca: any, spec: any, options: any) {
@@ -189,7 +190,7 @@ function debug(this: any, options: any) {
   }
 }
 
-const defaults = {
+const defaults = Open({
   /*
    * Express server config
   */
@@ -212,7 +213,7 @@ const defaults = {
    * Will log the metadata to the console
   */
   logToConsole: false
-}
+})
 
 async function preload(seneca: any) { }
 
