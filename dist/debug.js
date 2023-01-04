@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
+const gubu_1 = require("gubu");
 const { bootWebServers } = require('../web');
 function inward(seneca, spec, options) {
     const pluginName = spec.data.msg['plugin$'];
@@ -47,9 +48,20 @@ function inward(seneca, spec, options) {
             data_in.meta.custom = data.meta.custom;
         }
     }
+    const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta);
+    data_in.trace = {};
+    data_in.trace.trace_stack = fullTrace;
+    data_in.trace.needle_stack = needleTrace;
+    data_in.meta.caller = null;
     seneca.shared.wsServer.clients.forEach((c) => {
         c.send(JSON.stringify(data_in));
     });
+}
+function getFullAndNeedleTrace(meta) {
+    const { caller } = meta;
+    const fullTrace = caller.split('\n').map((str) => str.trim()).filter((str) => str.length);
+    const needleTrace = fullTrace.filter((str) => !str.includes('node_modules') && !str.includes('node:internal'));
+    return [fullTrace, needleTrace];
 }
 function outward(seneca, spec, options) {
     const pluginName = spec.data.msg['plugin$'];
@@ -154,7 +166,7 @@ function debug(options) {
         }, 3000);
     }
 }
-const defaults = {
+const defaults = (0, gubu_1.Open)({
     /*
      * Express server config
     */
@@ -177,7 +189,7 @@ const defaults = {
      * Will log the metadata to the console
     */
     logToConsole: false
-};
+});
 async function preload(seneca) { }
 Object.assign(debug, { defaults, preload });
 exports.default = debug;

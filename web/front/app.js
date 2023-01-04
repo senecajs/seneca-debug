@@ -33,12 +33,36 @@ export default {
       toggleButtonMessage: 'Stop recording',
       allowChartUpdate: true,
       showDrilldownAlert: false,
+      currentClickedStackTracePath: null,
+      drilldownPath: [],
+      currentSelectedFlamechartNode: null,
+      flamechartCaptureStatus: "",
     }
   },
   created: function() {
     const self = this
+
+    fetch(`/flame-capture-status`, {
+      method: 'GET',
+    })
+      .then((rawResponse) => {
+        rawResponse.json().then(({ status }) => {
+          if (status) {
+            self.flamechartCaptureStatus = "Stop Flame Data Capture";
+          } else {
+            self.flamechartCaptureStatus = "Start Flame Data Capture";
+          }
+        })
+      })
+      .catch((err) => {
+        console.log('err', err)
+      })
+
     this.$root.$on('msg', function(data) {
       self.addmsg(data)
+      if (self.currentSelectedFlamechartNode) {
+        self.applyDrilldown(self.currentSelectedFlamechartNode);
+      }
     })
     this.$root.$on('flame', function(data) {
       self.handleFlameChart(data)
@@ -53,6 +77,14 @@ export default {
   },
 
   watch: {
+    currentClickedStackTracePath(prevClicked) {
+      if (!prevClicked) {
+        return;
+      }
+      setTimeout(() => {
+        this.currentClickedStackTracePath = null;
+      }, 300)
+    },
     showDrilldownAlert(prevShowDrilldownAlertValue) {
       if (prevShowDrilldownAlertValue) {
         setTimeout(() => {
@@ -80,6 +112,35 @@ export default {
   },
 
   methods: {
+    handleMetaDataClick(nodeData) {
+      const { content, path } = nodeData;
+      if (!this.currentClickedStackTracePath) {
+        this.currentClickedStackTracePath = content;
+        return;
+      }
+      const possiblePaths = ['root.trace_stack[', 'root.needle_stack['];
+      const clickedInMetadata = possiblePaths.reduce((p, c) => {
+        return p || path.includes(c)
+      }, false);
+      if (!clickedInMetadata) {
+        return;
+      }
+      const callPath = content.split(' ').find((str) => str[0] === '(' && str[str.length - 1] === ')');
+      if (!callPath) {
+        return;
+      }
+      const finalPath = callPath.substring(1, callPath.length - 1);
+      fetch(`${this.$root.expressBaseUrl}/open-vscode`, {
+        method: 'POST',
+        body: JSON.stringify({ path: finalPath }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+        .catch((err) => {
+          console.log('err', err)
+        })
+    },
     clear: function() {
       searchlist = []
       msgmap = {}
@@ -97,6 +158,20 @@ export default {
             this.toggleButtonMessage = 'Start recording'
           } else {
             this.toggleButtonMessage = 'Stop recording'
+          }
+        })
+        .catch((err) => console.log('err', err))
+    },
+    toggleFlamechartCapture() {
+      const active = this.flamechartCaptureStatus === "Stop Flame Data Capture" ? false : true;
+      fetch(`/toggle-flame?active=${active}`, {
+        method: 'POST'
+      })
+        .then(() => {
+          if (this.flamechartCaptureStatus === "Stop Flame Data Capture") {
+            this.flamechartCaptureStatus = "Start Flame Data Capture";
+          } else {
+            this.flamechartCaptureStatus = "Stop Flame Data Capture";
           }
         })
         .catch((err) => console.log('err', err))
@@ -191,9 +266,47 @@ export default {
       }
       return data.reverse()
     },
+    setDrilldownMessage(chartNode) {
+      const getPatternName = (name) => {
+        const splitted = name.split(" : ")
+        if (!splitted || splitted.length !== 2) {
+          return ""
+        }
+        return splitted[1].trim()
+      }
+
+      let chartDrilldown = []
+      let currentNode = chartNode
+      while (true) {
+        const { data, parent } = currentNode;
+        const patternName = getPatternName(data.name)
+        if (!patternName) {
+          break;
+        }
+        chartDrilldown.push(patternName);
+        if (!parent) {
+          break;
+        }
+        currentNode = parent;
+      }
+      this.drilldownPath = chartDrilldown;
+    },
     applyDrilldown(chartNode) {
       const nodeIds = this.getIdsFromChartNode(chartNode)
       if (nodeIds.length) {
+
+        const clearVnodeClasses = () => {
+          const tree = this.$refs.msgtree.nodes
+          Object.keys(tree).forEach((treeKey) => {
+            const node = tree[treeKey];
+            const vnodeEl = node.vnode.$el
+            if (vnodeEl) {
+              vnodeEl.classList.remove('unhidable')
+            }
+          })
+        }
+        clearVnodeClasses()  
+
         nodeIds.forEach((nodeId) => {
           const elem = this.getMessageMapParentListFromId(nodeId)
 
@@ -205,13 +318,20 @@ export default {
               continue
             }
             const vnodeEl = node.vnode.$el
+            if (!vnodeEl) {
+              continue
+            }
             if (!elem.includes(treeKey)) {
-              vnodeEl.classList.add('hide')
+              if (!vnodeEl.classList.contains('unhidable')) {
+                vnodeEl.classList.add('hide')
+              }
             } else {
               vnodeEl.classList.remove('hide')
+              vnodeEl.classList.add('unhidable')
             }
           }
         })
+        this.setDrilldownMessage(chartNode);
       } else {
         const tree = this.$refs.msgtree.nodes
         const treeObjectKeyNames = Object.keys(tree)
@@ -221,8 +341,11 @@ export default {
             continue
           }
           const vnodeEl = node.vnode.$el
-          vnodeEl.classList.remove('hide')
+          if (vnodeEl) {
+            vnodeEl.classList.remove('hide')
+          }
         }
+        this.drilldownPath = []
       }
       this.showDrilldownAlert = true
     },
@@ -243,6 +366,7 @@ export default {
           .call(chart)
 
         chart.onClick((node) => {
+          this.currentSelectedFlamechartNode = node;
           this.applyDrilldown(node)
           
           if (node.data.name !== 'root') {

@@ -33,5 +33,8 @@
   overflow: hidden;
   margin-bottom: 0;
 }
+.drilldownParagraph {
+  display: inline;
+}
 
 </style>

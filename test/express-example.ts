@@ -11,7 +11,7 @@ function setupSeneca() {
   Seneca()
     .test()
     .use('repl')
-    .use('flame', { capture: true })
+    .use('flame', { capture: false })
     .use(Debug, {
       express: {
         port: 8008,
