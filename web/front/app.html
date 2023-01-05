@@ -1,4 +1,7 @@
 <div>
+  <v-alert :value="showDrilldownAlert" type="info" class="drilldownAlert">
+    Data has been drilled
+  </v-alert>
   <v-app>
     <v-content>
       <v-container>
@@ -7,6 +10,7 @@
           <v-spacer/>
           <v-btn @click="clear" solo>Clear</v-btn>
           <v-btn @click="toggle" solo>{{ toggleButtonMessage }}</v-btn>
+          <v-btn @click="toggleFlamechartCapture" solo>{{ flamechartCaptureStatus }}</v-btn>
           <v-spacer/>
           <v-spacer/>
           <v-text-field solo v-model="search_txt" type="search" placeholder="search..." />
@@ -17,6 +21,15 @@
           pa-3
           >
           <v-flex>
+            <v-card v-if="drilldownPath.length">
+              <v-card-title class="headline font-weight-bold">Drilldown filter pattern:</v-card-title>
+              <div style="margin-left: 16px">
+              <v-card-text class="drilldownParagraph" style="padding-right: 0px; padding-left: 0px" v-for="(item, index) in drilldownPath">
+                <p class="drilldownParagraph subheading">{{item}}</p>
+                <p class="drilldownParagraph caption grey--text darken-1" v-if="index !== (drilldownPath.length - 1)"> => </p>
+              </v-card-text>
+            </div>
+            </v-card>
             <v-treeview
               ref="msgtree"
               :active.sync="active"
@@ -34,6 +47,12 @@
                 <v-icon v-if="item.error">
                     warning
                 </v-icon>
+              </template>
+
+              <template v-slot:label="{ item }">
+                <p class="treeNodeLabel">
+                  {{ item.name }}
+                </p>
               </template>
 
               <template v-slot:append="{ item, open }">
@@ -76,6 +95,16 @@
                 </v-card-text>
 
                 <v-divider></v-divider>
+                <v-card-text>
+                  <h4 class="headline mb-2">Stack Trace<span class="ml-2 caption grey--text darken-1">(Double click to open in VSCode)</span></h4>
+
+                  <vue-json-pretty
+                    :deep="3"
+                    :data="selected.data.trace"
+                    @node-click="handleMetaDataClick"
+                    >
+                  </vue-json-pretty>
+                </v-card-text>
                 <v-card-text>
                   <h4 class="headline mb-2">Meta</h4>
 

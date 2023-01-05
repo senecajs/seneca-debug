@@ -1,4 +1,5 @@
 import Stringify from 'json-stringify-safe'
+import { Open } from 'gubu'
 const { bootWebServers } = require('../web')
 
 function inward(seneca: any, spec: any, options: any) {
@@ -49,9 +50,22 @@ function inward(seneca: any, spec: any, options: any) {
     }
   }
 
+  const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta);
+  data_in.trace = {}
+  data_in.trace.trace_stack = fullTrace
+  data_in.trace.needle_stack = needleTrace
+  data_in.meta.caller = null
+
   seneca.shared.wsServer!.clients.forEach((c: any) => {
     c.send(JSON.stringify(data_in))
   })
+}
+
+function getFullAndNeedleTrace(meta: any): [string[], string[]] {
+  const { caller } = meta;
+  const fullTrace = caller.split('\n').map((str: string) => str.trim()).filter((str: string) => str.length);
+  const needleTrace = fullTrace.filter((str: string) => !str.includes('node_modules') && !str.includes('node:internal'));
+  return [fullTrace, needleTrace];
 }
 
 function outward(seneca: any, spec: any, options: any) {
@@ -176,7 +190,7 @@ function debug(this: any, options: any) {
   }
 }
 
-const defaults = {
+const defaults = Open({
   /*
    * Express server config
   */
@@ -199,7 +213,7 @@ const defaults = {
    * Will log the metadata to the console
   */
   logToConsole: false
-}
+})
 
 async function preload(seneca: any) { }
 

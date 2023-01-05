@@ -17,5 +17,24 @@
 .v-treeview-node__content {
   cursor: pointer;
 }
+.hide {
+  display: none;
+}
+.drilldownAlert {
+  max-width: 200px;
+  position: fixed !important;
+  z-index: 999;
+  bottom: 30px;
+  right: 10%;
+}
+.treeNodeLabel {
+  max-width: 33vw;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+.drilldownParagraph {
+  display: inline;
+}
 
 </style>
