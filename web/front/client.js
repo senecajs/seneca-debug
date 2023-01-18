@@ -1,7 +1,13 @@
-import Vue from "vue";
-import App from "./app.vue";
+import Vue from 'vue';
+import VueRouter from 'vue-router/dist/vue-router';
+// const VueRouter = require('vue-router');
+import Home from "./screens/Home.vue";
+import Messages from './screens/Messages.vue';
+import Plugins from './screens/Plugins.vue';
 import Vuetify from "vuetify";
 import VueJsonPretty from "vue-json-pretty";
+import NavigationButton from './components/NavigationButton.vue';
+import NavigationDrawer from './components/NavigationDrawer.vue';
 
 import "vuetify/dist/vuetify.min.css";
 import "material-design-icons-iconfont/dist/material-design-icons.css";
@@ -11,9 +17,14 @@ Vue.use(Vuetify, {
 });
 Vue.config.productionTip = false;
 
+Vue.use(VueRouter);
+
 Vue.component("vue-json-pretty", VueJsonPretty);
+Vue.component('navigation-button', NavigationButton);
+Vue.component('navigation-drawer', NavigationDrawer);
 
 const app = createApp();
+
 app.$mount("#app");
 
 function createApp() {
@@ -41,11 +52,23 @@ function createApp() {
       Vue.prototype.client$ = wsClient;
     });
 
+  const routes = [
+    { path: '/', component: Home },
+    { path: '/messages', component: Messages },
+    { path: '/plugins', component: Plugins },
+  ];
+
+  const router = new VueRouter({
+    routes,
+  });
+
   const app = new Vue({
-    data: function() {
+   /*  data: function() {
       return {};
-    },
-    render: h => h(App)
+    }, */
+    router,
+    // render: h => h(App)
+    // render: h => h(Home)
   });
 
   return app;

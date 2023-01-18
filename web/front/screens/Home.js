@@ -9,7 +9,6 @@ var searchlist = []
 
 import * as d3 from 'd3'
 import * as d3flamegraph from 'd3-flame-graph'
-import * as d3tooltip from 'd3-flame-graph/src/tooltip'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 

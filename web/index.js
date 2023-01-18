@@ -52,6 +52,30 @@ function bootWebServers(seneca, options) {
       })
     })
 
+    app.post('/list-messages', (req, res) => {
+      const { pattern } = req.body;
+      const list = seneca.list(pattern);
+      return res.status(200).json(list);
+    })
+
+    app.post('/list-plugins', (req, res) => {
+      const { pattern } = req.body;;
+      const list = seneca.list_plugins(pattern);
+      return res.status(200).json(list);
+    })
+
+    app.post('/find-pattern', (req, res) => {
+      const { pattern } = req.body;
+      const senecaPattern = seneca.find(pattern);
+      return res.json(senecaPattern);
+    });
+
+    app.post('/find-plugin', (req, res) => {
+      const { pattern } = req.body;
+      const senecaPlugin = seneca.find_plugin(pattern);
+      return res.json(senecaPlugin);
+    });
+
     const expressApp = app.listen(expOptions.port);
 
     const wsServer = new ws.Server({

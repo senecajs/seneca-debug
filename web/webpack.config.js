@@ -25,6 +25,11 @@ module.exports = {
       {
         test: /\.(woff|woff2|eot|ttf|svg)(\?.*$|$)/,
         loader: 'url-loader?importLoaders=1&limit=100000'
+      },
+      {
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: "javascript/auto"
       }
     ]
   },
@@ -33,5 +38,10 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: 'index.html'
     })
-  ]
+  ],
+  resolve: {
+    alias: {
+        vue: 'vue/dist/vue.js'
+    },
+  }
 }

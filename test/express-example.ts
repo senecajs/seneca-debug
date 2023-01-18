@@ -26,19 +26,24 @@ function setupSeneca() {
       prod: false,
       flame: true,
     })
-    .add('a:1', function a1(msg, reply, meta) {
+    .add('a:1', function a1a(msg, reply, meta) {
       setTimeout(()=>{
         this.act('b:1', {x:msg.x}, function(err, out) {
           reply({x:2*out.x})
         })
       }, 400+(400*Math.random()))
     })
-    .add('a:1', function a1p(msg, reply, meta) {
+    .add('a:1', function a1b(msg, reply, meta) {
       setTimeout(()=>{
         this.prior(msg, function(err, out) {
           reply({x:out.x+0.5})
         })
       }, 400+(400*Math.random()))
+    })
+    .add('a:1', function a1c(msg, reply, meta) {
+      this.prior(msg, function(err, out) {
+        reply({x:5+out.x})
+      })
     })
     .add('b:1', function b1(msg, reply, meta) {
       setTimeout(()=>{
