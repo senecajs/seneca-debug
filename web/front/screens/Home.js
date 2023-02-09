@@ -64,6 +64,7 @@ export default {
       }
     })
     this.$root.$on('flame', function(data) {
+      // Got a bug here TODO
       self.handleFlameChart(data)
     })
   },

@@ -8,8 +8,16 @@
     </v-toolbar>
     <v-layout justify-space-between pa-3>
       <v-flex>
-        <v-treeview style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px" v-if="list"
-          return-object :active.sync="active" activatable :items="list" active-class="selected-msg"
+        <v-progress-circular
+          :width="2"
+          :size="75"
+          color="blue"
+          indeterminate
+          v-if="!filteredList.length"
+          style="position: absolute; top: 50%; left: 50%;"
+        ></v-progress-circular>
+        <v-treeview style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px" v-if="filteredList"
+          return-object :active.sync="active" activatable :items="filteredList" active-class="selected-msg"
           class="grey lighten-5"></v-treeview>
       </v-flex>
       <v-flex style="width: 100%">
@@ -31,10 +39,12 @@
   </v-container>
 </template>
 <script>
+import debounce from 'lodash/debounce';
 export default {
   data() {
     return {
       list: [],
+      filteredList: [],
       active: [],
       selectedPatternDetail: undefined,
       search_txt: '',
@@ -60,27 +70,31 @@ export default {
         return;
       };
       const currentActive = v[0];
-      self.findPattern(currentActive.raw)
-        .then((response) => {
-          self.selectedPatternDetail = response;
-        })
-        .catch((err) => console.log(err))
+      self.selectedPatternDetail = currentActive.pattern;
     },
     search_txt(v) {
-      if (!v || !v.length) {
-        this.fetchMessages();
-        return;
-      }
-      if (v.match(/[a-zA-Z0-9]:[a-zA-Z0-9]/gm)) {
-        this.fetchMessages(v);
-        return;
-      }
+      this.searchForName(v);
     }
   },
   mounted() {
     this.fetchMessages();
   },
   methods: {
+    searchForName: debounce(function(v) {
+      if (!v || !v.length) {
+        this.filteredList = this.list;
+        // this.fetchMessages();
+        return;
+      }
+      const filteredList = this.list.filter(({ name }) => {
+        return name.toString().toLowerCase().includes(v.toString().toLowerCase())
+      });
+      if (filteredList.length) {
+        this.filteredList = filteredList;
+      } else {
+        this.filteredList = this.list;
+      }
+    }, 850),
     findPattern(pattern) {
       return new Promise((resolve, reject) => {
         fetch('/find-pattern', {
@@ -96,7 +110,6 @@ export default {
           })
           .catch((err) => reject(err))
       })
-     
     },
     buildListName(object, pattern) {
       const ObjectEntries = Object.entries(object);
@@ -123,18 +136,19 @@ export default {
           res.json()
             .then((actionsList) => {
               if (!actionsList || !actionsList.length) return;
-              console.log('actionsList', actionsList);
               const mappedList = actionsList.map((action, idx) => {
                 return self.findPattern(action)
                   .then((pattern) => ({
                     id: idx,
                     name: self.buildListName(action, pattern),
                     raw: action,
+                    pattern,
                   }))
               })
               Promise.all(mappedList)
                 .then((results) => {
                   self.list = results;
+                  self.filteredList = results;
                 });
             })
         })

@@ -23,6 +23,7 @@ export default {
         { title: 'Tracing', path: '/' },
         { title: 'Messages', path: '/messages' },
         { title: 'Plugins', path: '/plugins' },
+        { title: 'Frame', path: '/frame' },
       ],
     };
   },

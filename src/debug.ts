@@ -51,18 +51,23 @@ function inward(seneca: any, spec: any, options: any) {
   }
 
   const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta);
-  data_in.trace = {}
-  data_in.trace.trace_stack = fullTrace
-  data_in.trace.needle_stack = needleTrace
-  data_in.meta.caller = null
+  if (fullTrace && needleTrace) {
+    data_in.trace = {}
+    data_in.trace.trace_stack = fullTrace
+    data_in.trace.needle_stack = needleTrace
+    data_in.meta.caller = null
+  }
 
   seneca.shared.wsServer!.clients.forEach((c: any) => {
     c.send(JSON.stringify(data_in))
   })
 }
 
-function getFullAndNeedleTrace(meta: any): [string[], string[]] {
+function getFullAndNeedleTrace(meta: any): [string[], string[]] | [null, null] {
   const { caller } = meta;
+  if (!caller) {
+    return [null, null];
+  }
   const fullTrace = caller.split('\n').map((str: string) => str.trim()).filter((str: string) => str.length);
   const needleTrace = fullTrace.filter((str: string) => !str.includes('node_modules') && !str.includes('node:internal'));
   return [fullTrace, needleTrace];

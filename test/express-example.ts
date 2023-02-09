@@ -2,6 +2,7 @@
 // http://localhost:8000/p1?x=1
 const Express = require('express')
 const Seneca = require('seneca')
+const Flame = require('@seneca/flame');
 import Debug from '../src/debug';
 
 setupSeneca()
@@ -10,8 +11,9 @@ setupSeneca()
 function setupSeneca() {
   Seneca()
     .test()
-    .use('repl')
-    .use('flame', { capture: false })
+    // .use('repl')
+    // .use('flame', { capture: false })
+    .use(Flame, { capture: false })
     .use(Debug, {
       express: {
         port: 8008,

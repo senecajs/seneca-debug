@@ -76,6 +76,19 @@ function bootWebServers(seneca, options) {
       return res.json(senecaPlugin);
     });
 
+    app.post('/boot-frame', (req, res) => {
+      seneca.act('sys:flame,cmd:create_frame', function cb(err, cbRes) {
+        return res.status(200).json(cbRes);
+      });
+    })
+
+    app.post('/get-and-destroy-frame', (req, res) => {
+      const { id } = req.body;
+      seneca.act(`sys:flame,cmd:destroy_flame,id:${id}`, function cb(err, cbRes) {
+        return res.status(200).json(cbRes);
+      });
+    })
+
     const expressApp = app.listen(expOptions.port);
 
     const wsServer = new ws.Server({

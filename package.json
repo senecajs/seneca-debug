@@ -60,6 +60,7 @@
     "seneca-msg-test": "^3.4.0",
     "seneca-plugin-validator": "0",
     "seneca-promisify": "3.4.0",
-    "ts-jest": "^28.0.7"
+    "ts-jest": "^28.0.7",
+    "webpack-cli": "^5.0.1"
   }
 }

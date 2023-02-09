@@ -3,6 +3,7 @@ import VueRouter from 'vue-router/dist/vue-router';
 // const VueRouter = require('vue-router');
 import Home from "./screens/Home.vue";
 import Messages from './screens/Messages.vue';
+import Frame from './screens/Frame.vue';
 import Plugins from './screens/Plugins.vue';
 import Vuetify from "vuetify";
 import VueJsonPretty from "vue-json-pretty";
@@ -56,6 +57,7 @@ function createApp() {
     { path: '/', component: Home },
     { path: '/messages', component: Messages },
     { path: '/plugins', component: Plugins },
+    { path: '/frame', component: Frame },
   ];
 
   const router = new VueRouter({
