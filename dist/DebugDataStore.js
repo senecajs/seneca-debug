@@ -21,7 +21,7 @@ class DebugDataStore {
         const meta = data.meta;
         const parent = meta.parent
             ? meta.parent
-            : meta.parents[0]
+            : (meta.parents && meta.parents[0])
                 ? meta.parents[0][1]
                 : null;
         if ('in' === data.debug_kind && !this.msgmap[meta.id]) {
@@ -62,7 +62,7 @@ class DebugDataStore {
               text: JSON.stringify(this.msgmapdata[meta.id].data).toLowerCase(),
               parent: parent
             }
-    
+      
             this.searchlist.push(searchListData)
             */
         }
