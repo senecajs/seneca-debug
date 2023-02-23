@@ -82,6 +82,19 @@ function bootWebServers(seneca, options) {
       });
     })
 
+    app.post('/boot-debug', (req, res) => {
+      seneca.act('sys:debug,cmd:create_debug_store', function cb(err, cbRes) {
+        return res.status(200).json(cbRes);
+      });
+    });
+
+    app.post('/get-and-destroy-debug', (req, res) => {
+      const { id } = req.body;
+      seneca.act(`sys:debug,cmd:destroy_debug_store,id:${id}`, function cb(err, cbRes) {
+        return res.status(200).json(cbRes);
+      });
+    })
+
     app.post('/get-and-destroy-frame', (req, res) => {
       const { id } = req.body;
       seneca.act(`sys:flame,cmd:destroy_flame,id:${id}`, function cb(err, cbRes) {

@@ -33,7 +33,8 @@
                 </template>
                 <v-layout justify-space-between pa-3>
                   <v-flex>
-                    <v-treeview @update:active="(e) => handleSelected(e, i)" style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
+                    <v-treeview @update:active="(e) => handleSelected(e, i)"
+                      style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
                       v-if="item.messageData" return-object activatable :items="item.messageData"
                       active-class="selected-msg" class="grey lighten-5"></v-treeview>
                   </v-flex>
@@ -58,7 +59,36 @@
                 <template v-slot:header>
                   <p>Tracing</p>
                 </template>
-                <p>TODO</p>
+                <v-layout justify-space-between pa-3>
+                  <v-flex>
+                    <!-- <p v-if="item">{{  JSON.stringify(item, null, 2) }}</p> -->
+                    <v-treeview style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
+                      @update:active="(e) => handleSelectedTrace(e, i)" v-if="item.top && item.top.items"
+                      :items="item.top.items" return-object activatable>
+                      <template v-slot:prepend="{ item, open }">
+                        {{ item.num_children }}
+                        <v-icon v-if="item.error">
+                          warning
+                        </v-icon>
+                      </template>
+
+                      <template v-slot:label="{ item }">
+                        <p class="treeNodeLabel">
+                          {{ item.name }}
+                        </p>
+                      </template>
+
+                      <template v-slot:append="{ item, open }">
+                        {{ item.duration }}ms
+                      </template>
+                    </v-treeview>
+                  </v-flex>
+                  <v-flex style="overflow-y: auto; height: calc(80vh); width: calc(46vw);">
+                    <v-card v-if="item.activeTrace && item.activeTrace.length">
+                      <vue-json-pretty :deep="3" :data="item.activeTrace"></vue-json-pretty>
+                    </v-card>
+                  </v-flex>
+                </v-layout>
               </v-expansion-panel-content>
             </v-expansion-panel>
           </v-expansion-panel-content>
@@ -84,6 +114,7 @@ export default {
       recording: false,
       frames: [],
       currentRecordingId: null,
+      currentDebugRecordingId: null,
       open: [],
       active: [],
       currentActiveMessage: null
@@ -115,20 +146,30 @@ export default {
         })
           .then((rawResponse) => rawResponse.json())
           .then(({ id }) => {
-            vue.frames.push({
-              flameData: null,
-              id,
-              start: Date.now(),
-              finish: null,
+            fetch('/boot-debug', {
+              method: 'POST'
             })
-            vue.currentRecordingId = id;
-            vue.recording = true;
+              .then((rawResponse) => rawResponse.json())
+              .then((response) => {
+                if (!response.success) return;
+                vue.frames.push({
+                  flameData: null,
+                  id,
+                  debugId: response.id,
+                  start: Date.now(),
+                  finish: null,
+                })
+                vue.currentRecordingId = id;
+                vue.currentDebugRecordingId = response.id;
+                vue.recording = true;
+              })
+
           })
           .catch((err) => {
             console.error(err);
           })
       } else {
-        if (!vue.currentRecordingId) return;
+        if (!vue.currentRecordingId || !vue.currentDebugRecordingId) return;
         fetch('/get-and-destroy-frame', {
           method: 'POST',
           body: JSON.stringify({ id: vue.currentRecordingId }),
@@ -139,53 +180,106 @@ export default {
           .then((rawResponse) => rawResponse.json())
           .then(async ({ success, data }) => {
             if (!success) return;
+            fetch('/get-and-destroy-debug', {
+              method: 'POST',
+              body: JSON.stringify({ id: vue.currentDebugRecordingId }),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            })
+              .then((rawResponse) => rawResponse.json())
+              .then(async (response) => {
+                if (!response.success) return;
+                const { msgmap, msgmapchildren, msgmapdata, top } = response
+                const stack = [];
+                const actionsCollections = [];
+                let currentNode;
+                stack.push(data);
+                while (stack.length) {
+                  currentNode = stack.pop();
+                  if (!currentNode) break;
+                  if (currentNode.children && currentNode.children.length) {
+                    currentNode.children.forEach((children) => {
+                      stack.push(children);
+                    })
+                  }
+                  if (currentNode.name) {
+                    actionsCollections.push(currentNode.name)
+                  }
+                }
+                const uniqueActions = [...new Set(actionsCollections)];
+                const messages = [...new Set(actionsCollections
+                  .filter((actionName) => actionName.includes(' : '))
+                  .map((actionName) => actionName.split(' : ')[1]))]
+                  .map((pattern) => vue.findPattern(pattern));
+                const settledResponses = await allSettled(messages);
+                const messagePaterns = settledResponses
+                  .filter((r) => r.status === "fulfilled")
+                  .map(({ value }) => {
+                    if (!value || !value.id) return null;
+                    return {
+                      id: value.id,
+                      name: `${value.pattern} - ${value.id}`,
+                      raw: value,
+                    }
+                  })
+                  .filter((val) => !!val)
+                const frame = vue.frames.find(({ id }) => id === vue.currentRecordingId)
+                if (frame) {
+                  const old = vue.frames.filter(({ id }) => id !== vue.currentRecordingId);
+                  frame.flameData = data;
+                  frame.messageData = messagePaterns;
+                  frame.activeMessage = null;
+                  frame.activeTrace = null;
+                  frame.activeMessagePriors = null;
+                  frame.treemodel = [];
+                  frame.finish = Date.now();
+                  // msgmap, msgmapchildren, msgmapdata, top
+                  frame.msgmap = msgmap;
+                  frame.msgmapchildren = msgmapchildren;
+                  frame.msgmapdata = msgmapdata;
+                  // VITOR AQUI
 
-            const stack = [];
-            const actionsCollections = [];
-            let currentNode;
-            stack.push(data);
-            while (stack.length) {
-              currentNode = stack.pop();
-              if (!currentNode) break;
-              if (currentNode.children && currentNode.children.length) {
-                currentNode.children.forEach((children) => {
-                  stack.push(children);
-                })
-              }
-              if (currentNode.name) {
-                actionsCollections.push(currentNode.name)
-              }
-            }
-            const uniqueActions = [...new Set(actionsCollections)];
-            const messages = [...new Set(actionsCollections
-              .filter((actionName) => actionName.includes(' : '))
-              .map((actionName) => actionName.split(' : ')[1]))]
-              .map((pattern) => vue.findPattern(pattern));
-            const settledResponses = await allSettled(messages);
-            const messagePaterns = settledResponses
-              .filter((r) => r.status === "fulfilled")
-              .map(({ value }) => ({
-                id: value.id,
-                name: `${value.pattern} - ${value.id}`,
-                raw: value,
-              }))
-            const frame = vue.frames.find(({ id }) => id === vue.currentRecordingId)
-            if (frame) {
-              const old = vue.frames.filter(({ id }) => id !== vue.currentRecordingId);
-              frame.flameData = data;
-              frame.messageData = messagePaterns;
-              frame.activeMessage = null;
-              frame.activeMessagePriors = null;
-              frame.treemodel = [];
-              frame.finish = Date.now();
-              vue.frames = [
-                ...old,
-                frame,
-              ];
-              vue.buildChart(frame, frame.id);
-            }
-            vue.recording = false;
-            vue.currentRecordingId = null;
+                  // console.log('msgmapchildren', msgmapchildren)
+                  // console.log('top, top', top)
+                  const buildFullTop = (msgmapchildren, top) => {
+                    const topItems = top.items;
+
+                    let count = 0;
+                    const max = Math.pow(Math.max(topItems.length, 10), 3);
+
+                    for (const item of topItems) {
+                      let currentItem = item;
+                      count = 0;
+                      while (true && count < max) {
+                        if (currentItem.children && currentItem.children.length) {
+                          currentItem = currentItem.children[0];
+                        } else {
+                          const exists = msgmapchildren[currentItem.id];
+                          if (exists) {
+                            currentItem.children = exists;
+                          } else {
+                            break;
+                          }
+                        }
+                        count += 1;
+                      }
+                    }
+                  }
+                  buildFullTop(msgmapchildren, top)
+
+
+                  frame.top = top;
+                  vue.frames = [
+                    ...old,
+                    frame,
+                  ];
+                  vue.buildChart(frame, frame.id);
+                }
+                vue.recording = false;
+                vue.currentRecordingId = null;
+                vue.currentDebugRecordingId = null;
+              })
           });
       }
     },
@@ -295,6 +389,13 @@ export default {
     load_children: function (data) {
       data.children = msgmapchildren[this.currentRecordingId][data.id]
     },
+    myLoadChildren(item) {
+      return (data) => {
+        console.log('data', data)
+        console.log('item', item)
+        data.children = item.msgmapchildren[data.id][0]
+      }
+    },
     loadChildren(id) {
       return (data) => {
         data.children = msgmapchildren[id][data.id];
@@ -314,6 +415,13 @@ export default {
       const vue = this;
       vue.frames[index].activeMessage = event;
       vue.frames[index].activeMessagePriors = vue.getMessagePriors(event);
+      // Enforce update
+      vue.frames = [...vue.frames];
+    },
+    handleSelectedTrace(event, index) {
+      const vue = this;
+      vue.frames[index].activeTrace = event;
+
       // Enforce update
       vue.frames = [...vue.frames];
     },
