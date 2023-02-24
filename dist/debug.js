@@ -28,7 +28,7 @@ function newInward(seneca, spec, options) {
             end: data.meta.end,
             pattern: data.meta.pattern,
             plugin: data.meta.plugin,
-            instance: data.meta.instance
+            instance: data.meta.instance,
         };
         if (data.meta.parents && data.meta.parents.length > 1) {
             data_in.meta.parents = null;
@@ -79,7 +79,7 @@ function inward(seneca, spec, options) {
             end: data.meta.end,
             pattern: data.meta.pattern,
             plugin: data.meta.plugin,
-            instance: data.meta.instance
+            instance: data.meta.instance,
         };
         if (data.meta.parents && data.meta.parents.length > 1) {
             data_in.meta.parents = null;
@@ -106,7 +106,10 @@ function getFullAndNeedleTrace(meta) {
     if (!caller) {
         return [null, null];
     }
-    const fullTrace = caller.split('\n').map((str) => str.trim()).filter((str) => str.length);
+    const fullTrace = caller
+        .split('\n')
+        .map((str) => str.trim())
+        .filter((str) => str.length);
     const needleTrace = fullTrace.filter((str) => !str.includes('node_modules') && !str.includes('node:internal'));
     return [fullTrace, needleTrace];
 }
@@ -131,7 +134,7 @@ function newOutward(seneca, spec, options) {
             start: data.meta.start,
             end: data.meta.end,
             pattern: data.meta.pattern,
-            parents: data.meta.parents
+            parents: data.meta.parents,
         };
         data_out.err = data.meta.err;
         data_out.error = data.meta.error;
@@ -176,7 +179,7 @@ function outward(seneca, spec, options) {
             start: data.meta.start,
             end: data.meta.end,
             pattern: data.meta.pattern,
-            parents: data.meta.parents
+            parents: data.meta.parents,
         };
         data_out.err = data.meta.err;
         data_out.error = data.meta.error;
@@ -298,18 +301,27 @@ function debug(options) {
     this.add('sys:debug,cmd:destroy_debug_store', function destroyDebugStore(msg, reply) {
         const { id } = msg;
         if (!id) {
-            return reply({ success: false, error: "Missing or incorrect parameter values, please provide 'id' parameter" });
+            return reply({
+                success: false,
+                error: "Missing or incorrect parameter values, please provide 'id' parameter",
+            });
         }
         const debugStore = seneca.shared.debugDataStores.find((debugStore) => debugStore.id === id);
         if (!debugStore) {
-            return reply({ success: false, error: "No 'DebugStore' was found for the given 'id' parameter" });
+            return reply({
+                success: false,
+                error: "No 'DebugStore' was found for the given 'id' parameter",
+            });
         }
         const { msgmap, msgmapchildren, msgmapdata, top } = debugStore.debugDataStore.get();
         const newDebugStore = seneca.shared.debugDataStores.filter((debugStore) => debugStore.id !== id);
         seneca.shared.debugDataStores = newDebugStore;
         reply({
             success: true,
-            msgmap, msgmapchildren, msgmapdata, top
+            msgmap,
+            msgmapchildren,
+            msgmapdata,
+            top,
         });
     });
     const { flame } = seneca.list_plugins();
@@ -322,7 +334,7 @@ function debug(options) {
                 seneca.shared.wsServer.clients.forEach((c) => {
                     c.send(JSON.stringify({
                         message: out,
-                        feature: 'flame'
+                        feature: 'flame',
                     }));
                 });
             });
@@ -332,26 +344,26 @@ function debug(options) {
 const defaults = (0, gubu_1.Open)({
     /*
      * Express server config
-    */
+     */
     express: {
         port: 8899,
-        host: 'localhost'
+        host: 'localhost',
     },
     /*
      * WebSocket server config
-    */
+     */
     ws: {
-        port: 8898
+        port: 8898,
     },
     /*
      * WebSocket path to push data
-    */
+     */
     wspath: '/debug',
     prod: false,
     /*
      * Will log the metadata to the console
-    */
-    logToConsole: false
+     */
+    logToConsole: false,
 });
 async function preload(seneca) { }
 Object.assign(debug, { defaults, preload });

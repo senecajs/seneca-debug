@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 class DebugDataStore {
     constructor() {
         this.top = {
-            items: []
+            items: [],
         };
         this.msgmap = {};
         this.msgmapchildren = {};
@@ -21,7 +21,7 @@ class DebugDataStore {
         const meta = data.meta;
         const parent = meta.parent
             ? meta.parent
-            : (meta.parents && meta.parents[0])
+            : meta.parents && meta.parents[0]
                 ? meta.parents[0][1]
                 : null;
         if ('in' === data.debug_kind && !this.msgmap[meta.id]) {
@@ -36,12 +36,12 @@ class DebugDataStore {
                 children: [],
                 error: false,
                 duration: null,
-                num_children: 0
+                num_children: 0,
             };
             this.msgmapdata[meta.id] = {
                 id: meta.id,
                 name: data.name,
-                data: data
+                data: data,
             };
             parent_children.unshift(entry);
             this.msgmap[meta.id] = entry;
@@ -133,5 +133,5 @@ addmsg: function(data) {
         searchlist.push(searchListData)
       }
     },
-*/ 
+*/
 //# sourceMappingURL=DebugDataStore.js.map
