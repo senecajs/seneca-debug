@@ -1,17 +1,17 @@
 import Stringify from 'json-stringify-safe'
 import { Open } from 'gubu'
-import { SenecaSharedInstance } from './types';
-import { v4 as uuidv4 } from 'uuid';
-import DebugDataStore from './DebugDataStore';
+import { SenecaSharedInstance } from './types'
+import { v4 as uuidv4 } from 'uuid'
+import DebugDataStore from './DebugDataStore'
 const { bootWebServers } = require('../web')
 
 function newInward(seneca: any, spec: any, options: any) {
-  const pluginName = spec.data.msg['plugin$'];
+  const pluginName = spec.data.msg['plugin$']
   if (pluginName && pluginName.name && pluginName.name === 'debug') {
-    return;
+    return
   }
   if (!seneca.shared.active) {
-    return;
+    return
   }
   const { data } = spec
   data.debug_kind = 'in'
@@ -28,7 +28,7 @@ function newInward(seneca: any, spec: any, options: any) {
       end: data.meta.end,
       pattern: data.meta.pattern,
       plugin: data.meta.plugin,
-      instance: data.meta.instance
+      instance: data.meta.instance,
     }
 
     if (data.meta.parents && data.meta.parents.length > 1) {
@@ -40,7 +40,7 @@ function newInward(seneca: any, spec: any, options: any) {
     }
   }
 
-  const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta);
+  const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta)
   if (fullTrace && needleTrace) {
     data_in.trace = {}
     data_in.trace.trace_stack = fullTrace
@@ -48,16 +48,16 @@ function newInward(seneca: any, spec: any, options: any) {
     data_in.meta.caller = null
   }
 
-  return data_in;
+  return data_in
 }
 
 function inward(seneca: any, spec: any, options: any) {
-  const pluginName = spec.data.msg['plugin$'];
+  const pluginName = spec.data.msg['plugin$']
   if (pluginName && pluginName.name && pluginName.name === 'debug') {
-    return;
+    return
   }
   if (!seneca.shared.active) {
-    return;
+    return
   }
   const { logToConsole, wspath } = options
   const { data } = spec
@@ -87,7 +87,7 @@ function inward(seneca: any, spec: any, options: any) {
       end: data.meta.end,
       pattern: data.meta.pattern,
       plugin: data.meta.plugin,
-      instance: data.meta.instance
+      instance: data.meta.instance,
     }
 
     if (data.meta.parents && data.meta.parents.length > 1) {
@@ -99,7 +99,7 @@ function inward(seneca: any, spec: any, options: any) {
     }
   }
 
-  const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta);
+  const [fullTrace, needleTrace] = getFullAndNeedleTrace(data_in.meta)
   if (fullTrace && needleTrace) {
     data_in.trace = {}
     data_in.trace.trace_stack = fullTrace
@@ -113,22 +113,28 @@ function inward(seneca: any, spec: any, options: any) {
 }
 
 function getFullAndNeedleTrace(meta: any): [string[], string[]] | [null, null] {
-  const { caller } = meta;
+  const { caller } = meta
   if (!caller) {
-    return [null, null];
+    return [null, null]
   }
-  const fullTrace = caller.split('\n').map((str: string) => str.trim()).filter((str: string) => str.length);
-  const needleTrace = fullTrace.filter((str: string) => !str.includes('node_modules') && !str.includes('node:internal'));
-  return [fullTrace, needleTrace];
+  const fullTrace = caller
+    .split('\n')
+    .map((str: string) => str.trim())
+    .filter((str: string) => str.length)
+  const needleTrace = fullTrace.filter(
+    (str: string) =>
+      !str.includes('node_modules') && !str.includes('node:internal')
+  )
+  return [fullTrace, needleTrace]
 }
 
 function newOutward(seneca: any, spec: any, options: any) {
-  const pluginName = spec.data.msg['plugin$'];
+  const pluginName = spec.data.msg['plugin$']
   if (pluginName && pluginName.name && pluginName.name === 'debug') {
-    return;
+    return
   }
   if (!seneca.shared.active) {
-    return;
+    return
   }
   const { data } = spec
   data.debug_kind = 'out'
@@ -145,7 +151,7 @@ function newOutward(seneca: any, spec: any, options: any) {
       start: data.meta.start,
       end: data.meta.end,
       pattern: data.meta.pattern,
-      parents: data.meta.parents
+      parents: data.meta.parents,
     }
 
     data_out.err = data.meta.err
@@ -162,12 +168,12 @@ function newOutward(seneca: any, spec: any, options: any) {
 }
 
 function outward(seneca: any, spec: any, options: any) {
-  const pluginName = spec.data.msg['plugin$'];
+  const pluginName = spec.data.msg['plugin$']
   if (pluginName && pluginName.name && pluginName.name === 'debug') {
-    return;
+    return
   }
   if (!seneca.shared.active) {
-    return;
+    return
   }
   const { logToConsole, wspath } = options
   const { data } = spec
@@ -199,7 +205,7 @@ function outward(seneca: any, spec: any, options: any) {
       start: data.meta.start,
       end: data.meta.end,
       pattern: data.meta.pattern,
-      parents: data.meta.parents
+      parents: data.meta.parents,
     }
 
     data_out.err = data.meta.err
@@ -218,28 +224,28 @@ function outward(seneca: any, spec: any, options: any) {
   })
 }
 
-let isBootedCache = false;
+let isBootedCache = false
 function isBooted(seneca: any) {
   if (isBootedCache) {
-    return isBootedCache;
+    return isBootedCache
   }
-  const senecaShared = seneca.shared as SenecaSharedInstance;
+  const senecaShared = seneca.shared as SenecaSharedInstance
 
   if (!seneca.shared.expressIsReady) {
-    return false;
+    return false
   }
   if (!senecaShared.debugDataStores || !senecaShared.debugDataStores.length) {
-    return false;
+    return false
   }
-  isBootedCache = true;
-  return isBootedCache;
+  isBootedCache = true
+  return isBootedCache
 }
 
 function debug(this: any, options: any) {
   const seneca = this
 
   this.init(async function (done: () => any) {
-    const sharedInstance = seneca.shared as SenecaSharedInstance;
+    const sharedInstance = seneca.shared as SenecaSharedInstance
 
     const { expressApp, wsServer } = await bootWebServers(seneca, options)
     sharedInstance.expressApp = expressApp
@@ -253,25 +259,25 @@ function debug(this: any, options: any) {
         active: true,
       },
     ]
-    done();
+    done()
   })
 
   this.outward((ctxt: any, data: any) => {
     const finalData = {} as { data: any }
     finalData.data = ctxt.data || data
-    const outwardData = newOutward(seneca, finalData, options);
+    const outwardData = newOutward(seneca, finalData, options)
     if (!outwardData) {
-      return;
+      return
     }
-    const senecaShared = seneca.shared as SenecaSharedInstance;
+    const senecaShared = seneca.shared as SenecaSharedInstance
     if (!isBooted(seneca)) {
-      return;
+      return
     }
     senecaShared.debugDataStores.forEach(({ active, debugDataStore }) => {
       if (active) {
-        debugDataStore.handle(outwardData);
+        debugDataStore.handle(outwardData)
       }
-    });
+    })
 
     // Legacy
     senecaShared.wsServer.clients.forEach((c: any) => {
@@ -283,19 +289,19 @@ function debug(this: any, options: any) {
     const finalData = {} as { data: any }
     finalData.data = ctxt.data || data
     // inward(seneca, finalData, options)
-    const inwardData = newInward(seneca, finalData, options);
+    const inwardData = newInward(seneca, finalData, options)
     if (!inwardData) {
-      return;
+      return
     }
-    const senecaShared = seneca.shared as SenecaSharedInstance;
+    const senecaShared = seneca.shared as SenecaSharedInstance
     if (!isBooted(seneca)) {
-      return;
+      return
     }
     senecaShared.debugDataStores.forEach(({ active, debugDataStore }) => {
       if (active) {
-        debugDataStore.handle(inwardData);
+        debugDataStore.handle(inwardData)
       }
-    });
+    })
 
     // Legacy
     senecaShared.wsServer.clients.forEach((c: any) => {
@@ -303,70 +309,101 @@ function debug(this: any, options: any) {
     })
   })
 
-  this.add('role:seneca,cmd:close', function closeDebug(this: any, _msg: any, reply: any) {
+  this.add(
+    'role:seneca,cmd:close',
+    function closeDebug(this: any, _msg: any, reply: any) {
+      seneca.shared.expressApp.close()
+      seneca.shared.wsServer.close()
 
-    seneca.shared.expressApp.close()
-    seneca.shared.wsServer.close()
+      reply()
+    }
+  )
 
-    reply()
-  })
-
-  this.add('sys:debug,area:trace', function debugTraceActivation(this: any, msg: any, reply: any) {
-    const { active } = msg;
-    seneca.shared.active = Boolean(active)
-    const { flame } = seneca.list_plugins();
-    if (flame && options.flame) {
-      seneca.act(`sys:flame,capture:${active}`, function cb() {
+  this.add(
+    'sys:debug,area:trace',
+    function debugTraceActivation(this: any, msg: any, reply: any) {
+      const { active } = msg
+      seneca.shared.active = Boolean(active)
+      const { flame } = seneca.list_plugins()
+      if (flame && options.flame) {
+        seneca.act(`sys:flame,capture:${active}`, function cb() {
+          reply()
+        })
+      } else {
         reply()
+      }
+    }
+  )
+
+  this.add(
+    'sys:debug,cmd:create_debug_store',
+    function createDebugStore(this: any, msg: any, reply: any) {
+      const debugDataStore = new DebugDataStore()
+      const id = uuidv4()
+      ;(seneca.shared as SenecaSharedInstance).debugDataStores.push({
+        id,
+        active: true,
+        debugDataStore,
       })
-    } else {
-      reply();
+      reply({ success: true, id })
     }
-  });
+  )
 
-  this.add('sys:debug,cmd:create_debug_store', function createDebugStore(this: any, msg: any, reply: any) {
-    const debugDataStore = new DebugDataStore();
-    const id = uuidv4();
-    (seneca.shared as SenecaSharedInstance).debugDataStores.push({
-      id,
-      active: true,
-      debugDataStore,
-    })
-    reply({ success: true, id });
-  })
-
-  this.add('sys:debug,cmd:destroy_debug_store', function destroyDebugStore(this: any, msg: any, reply: any) {
-    const { id } = msg;
-    if (!id) {
-      return reply({ success: false, error: "Missing or incorrect parameter values, please provide 'id' parameter" })
+  this.add(
+    'sys:debug,cmd:destroy_debug_store',
+    function destroyDebugStore(this: any, msg: any, reply: any) {
+      const { id } = msg
+      if (!id) {
+        return reply({
+          success: false,
+          error:
+            "Missing or incorrect parameter values, please provide 'id' parameter",
+        })
+      }
+      const debugStore = (
+        seneca.shared as SenecaSharedInstance
+      ).debugDataStores.find((debugStore) => debugStore.id === id)
+      if (!debugStore) {
+        return reply({
+          success: false,
+          error: "No 'DebugStore' was found for the given 'id' parameter",
+        })
+      }
+      const { msgmap, msgmapchildren, msgmapdata, top } =
+        debugStore.debugDataStore.get()
+      const newDebugStore = (
+        seneca.shared as SenecaSharedInstance
+      ).debugDataStores.filter((debugStore) => debugStore.id !== id)
+      ;(seneca.shared as SenecaSharedInstance).debugDataStores = newDebugStore
+      reply({
+        success: true,
+        msgmap,
+        msgmapchildren,
+        msgmapdata,
+        top,
+      })
     }
-    const debugStore = (seneca.shared as SenecaSharedInstance).debugDataStores.find((debugStore) => debugStore.id === id);
-    if (!debugStore) {
-      return reply({ success: false, error: "No 'DebugStore' was found for the given 'id' parameter" })
-    }
-    const { msgmap, msgmapchildren, msgmapdata, top } = debugStore.debugDataStore.get();
-    const newDebugStore = (seneca.shared as SenecaSharedInstance).debugDataStores.filter((debugStore) => debugStore.id !== id);
-    (seneca.shared as SenecaSharedInstance).debugDataStores = newDebugStore;
-    reply({
-      success: true,
-      msgmap, msgmapchildren, msgmapdata, top
-    })
-  })
+  )
 
-  const { flame } = seneca.list_plugins();
+  const { flame } = seneca.list_plugins()
   if (flame && options.flame) {
     setInterval(() => {
-      seneca.act('sys:flame,cmd:get,cached:true', function response(err: any, out: any, meta: any) {
-        if (err) {
-          return;
+      seneca.act(
+        'sys:flame,cmd:get,cached:true',
+        function response(err: any, out: any, meta: any) {
+          if (err) {
+            return
+          }
+          seneca.shared.wsServer!.clients.forEach((c: any) => {
+            c.send(
+              JSON.stringify({
+                message: out,
+                feature: 'flame',
+              })
+            )
+          })
         }
-        seneca.shared.wsServer!.clients.forEach((c: any) => {
-          c.send(JSON.stringify({
-            message: out,
-            feature: 'flame'
-          }))
-        })
-      });
+      )
     }, 3000)
   }
 }
@@ -374,29 +411,29 @@ function debug(this: any, options: any) {
 const defaults = Open({
   /*
    * Express server config
-  */
+   */
   express: {
     port: 8899,
-    host: 'localhost'
+    host: 'localhost',
   },
   /*
    * WebSocket server config
-  */
+   */
   ws: {
-    port: 8898
+    port: 8898,
   },
   /*
    * WebSocket path to push data
-  */
+   */
   wspath: '/debug',
   prod: false,
   /*
    * Will log the metadata to the console
-  */
-  logToConsole: false
+   */
+  logToConsole: false,
 })
 
-async function preload(seneca: any) { }
+async function preload(seneca: any) {}
 
 Object.assign(debug, { defaults, preload })
 

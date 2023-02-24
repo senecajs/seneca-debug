@@ -33,22 +33,50 @@
                 </template>
                 <v-layout justify-space-between pa-3>
                   <v-flex>
-                    <v-treeview @update:active="(e) => handleSelected(e, i)"
-                      style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
-                      v-if="item.messageData" return-object activatable :items="item.messageData"
-                      active-class="selected-msg" class="grey lighten-5"></v-treeview>
+                    <v-treeview
+                      @update:active="(e) => handleSelected(e, i)"
+                      style="
+                        overflow-y: auto;
+                        height: calc(80vh);
+                        width: calc(46vw);
+                        margin-right: 5px;
+                      "
+                      v-if="item.messageData"
+                      return-object
+                      activatable
+                      :items="item.messageData"
+                      active-class="selected-msg"
+                      class="grey lighten-5"
+                    ></v-treeview>
                   </v-flex>
-                  <v-flex style="overflow-y: auto; height: calc(80vh); width: calc(46vw);">
-                    <v-card v-if="item.activeMessage && item.activeMessage.length">
+                  <v-flex
+                    style="
+                      overflow-y: auto;
+                      height: calc(80vh);
+                      width: calc(46vw);
+                    "
+                  >
+                    <v-card
+                      v-if="item.activeMessage && item.activeMessage.length"
+                    >
                       <v-card-text>
                         <h3 class="headline mb-2">Data</h3>
-                        <vue-json-pretty :deep="3" :data="{ ...item.activeMessage[0].raw, priordef: undefined }">
+                        <vue-json-pretty
+                          :deep="3"
+                          :data="{
+                            ...item.activeMessage[0].raw,
+                            priordef: undefined,
+                          }"
+                        >
                         </vue-json-pretty>
                       </v-card-text>
                       <v-divider></v-divider>
                       <v-card-text v-if="item.activeMessagePriors">
                         <h3 class="headline mb-2">Priors</h3>
-                        <vue-json-pretty :deep="3" :data="item.activeMessagePriors">
+                        <vue-json-pretty
+                          :deep="3"
+                          :data="item.activeMessagePriors"
+                        >
                         </vue-json-pretty>
                       </v-card-text>
                     </v-card>
@@ -62,14 +90,22 @@
                 <v-layout justify-space-between pa-3>
                   <v-flex>
                     <!-- <p v-if="item">{{  JSON.stringify(item, null, 2) }}</p> -->
-                    <v-treeview style="overflow-y: auto; height: calc(80vh); width: calc(46vw); margin-right: 5px"
-                      @update:active="(e) => handleSelectedTrace(e, i)" v-if="item.top && item.top.items"
-                      :items="item.top.items" return-object activatable>
+                    <v-treeview
+                      style="
+                        overflow-y: auto;
+                        height: calc(80vh);
+                        width: calc(46vw);
+                        margin-right: 5px;
+                      "
+                      @update:active="(e) => handleSelectedTrace(e, i)"
+                      v-if="item.top && item.top.items"
+                      :items="item.top.items"
+                      return-object
+                      activatable
+                    >
                       <template v-slot:prepend="{ item, open }">
                         {{ item.num_children }}
-                        <v-icon v-if="item.error">
-                          warning
-                        </v-icon>
+                        <v-icon v-if="item.error"> warning </v-icon>
                       </template>
 
                       <template v-slot:label="{ item }">
@@ -83,9 +119,18 @@
                       </template>
                     </v-treeview>
                   </v-flex>
-                  <v-flex style="overflow-y: auto; height: calc(80vh); width: calc(46vw);">
+                  <v-flex
+                    style="
+                      overflow-y: auto;
+                      height: calc(80vh);
+                      width: calc(46vw);
+                    "
+                  >
                     <v-card v-if="item.activeTrace && item.activeTrace.length">
-                      <vue-json-pretty :deep="3" :data="item.activeTrace"></vue-json-pretty>
+                      <vue-json-pretty
+                        :deep="3"
+                        :data="item.activeTrace"
+                      ></vue-json-pretty>
                     </v-card>
                   </v-flex>
                 </v-layout>
@@ -107,7 +152,6 @@ const msgmap = {}
 const msgmapchildren = {}
 const msgmapdata = {}
 
-
 export default {
   data() {
     return {
@@ -117,7 +161,7 @@ export default {
       currentDebugRecordingId: null,
       open: [],
       active: [],
-      currentActiveMessage: null
+      currentActiveMessage: null,
     }
   },
   computed: {
@@ -128,18 +172,18 @@ export default {
     },
   },
   created: function () {
-    const self = this;
+    const self = this
     this.$root.$on('msg', function (data) {
-      if (!self.currentRecordingId) return;
-      self.addMsg(data);
+      if (!self.currentRecordingId) return
+      self.addMsg(data)
     })
   },
   methods: {
     getDebugList(recordingId) {
-      return top[recordingId] || [];
+      return top[recordingId] || []
     },
     handleRecording() {
-      const vue = this;
+      const vue = this
       if (!this.recording) {
         fetch('/boot-frame', {
           method: 'POST',
@@ -147,11 +191,11 @@ export default {
           .then((rawResponse) => rawResponse.json())
           .then(({ id }) => {
             fetch('/boot-debug', {
-              method: 'POST'
+              method: 'POST',
             })
               .then((rawResponse) => rawResponse.json())
               .then((response) => {
-                if (!response.success) return;
+                if (!response.success) return
                 vue.frames.push({
                   flameData: null,
                   id,
@@ -159,17 +203,16 @@ export default {
                   start: Date.now(),
                   finish: null,
                 })
-                vue.currentRecordingId = id;
-                vue.currentDebugRecordingId = response.id;
-                vue.recording = true;
+                vue.currentRecordingId = id
+                vue.currentDebugRecordingId = response.id
+                vue.recording = true
               })
-
           })
           .catch((err) => {
-            console.error(err);
+            console.error(err)
           })
       } else {
-        if (!vue.currentRecordingId || !vue.currentDebugRecordingId) return;
+        if (!vue.currentRecordingId || !vue.currentDebugRecordingId) return
         fetch('/get-and-destroy-frame', {
           method: 'POST',
           body: JSON.stringify({ id: vue.currentRecordingId }),
@@ -179,7 +222,7 @@ export default {
         })
           .then((rawResponse) => rawResponse.json())
           .then(async ({ success, data }) => {
-            if (!success) return;
+            if (!success) return
             fetch('/get-and-destroy-debug', {
               method: 'POST',
               body: JSON.stringify({ id: vue.currentDebugRecordingId }),
@@ -189,34 +232,37 @@ export default {
             })
               .then((rawResponse) => rawResponse.json())
               .then(async (response) => {
-                if (!response.success) return;
+                if (!response.success) return
                 const { msgmap, msgmapchildren, msgmapdata, top } = response
-                const stack = [];
-                const actionsCollections = [];
-                let currentNode;
-                stack.push(data);
+                const stack = []
+                const actionsCollections = []
+                let currentNode
+                stack.push(data)
                 while (stack.length) {
-                  currentNode = stack.pop();
-                  if (!currentNode) break;
+                  currentNode = stack.pop()
+                  if (!currentNode) break
                   if (currentNode.children && currentNode.children.length) {
                     currentNode.children.forEach((children) => {
-                      stack.push(children);
+                      stack.push(children)
                     })
                   }
                   if (currentNode.name) {
                     actionsCollections.push(currentNode.name)
                   }
                 }
-                const uniqueActions = [...new Set(actionsCollections)];
-                const messages = [...new Set(actionsCollections
-                  .filter((actionName) => actionName.includes(' : '))
-                  .map((actionName) => actionName.split(' : ')[1]))]
-                  .map((pattern) => vue.findPattern(pattern));
-                const settledResponses = await allSettled(messages);
+                const uniqueActions = [...new Set(actionsCollections)]
+                const messages = [
+                  ...new Set(
+                    actionsCollections
+                      .filter((actionName) => actionName.includes(' : '))
+                      .map((actionName) => actionName.split(' : ')[1])
+                  ),
+                ].map((pattern) => vue.findPattern(pattern))
+                const settledResponses = await allSettled(messages)
                 const messagePaterns = settledResponses
-                  .filter((r) => r.status === "fulfilled")
+                  .filter((r) => r.status === 'fulfilled')
                   .map(({ value }) => {
-                    if (!value || !value.id) return null;
+                    if (!value || !value.id) return null
                     return {
                       id: value.id,
                       name: `${value.pattern} - ${value.id}`,
@@ -224,63 +270,66 @@ export default {
                     }
                   })
                   .filter((val) => !!val)
-                const frame = vue.frames.find(({ id }) => id === vue.currentRecordingId)
+                const frame = vue.frames.find(
+                  ({ id }) => id === vue.currentRecordingId
+                )
                 if (frame) {
-                  const old = vue.frames.filter(({ id }) => id !== vue.currentRecordingId);
-                  frame.flameData = data;
-                  frame.messageData = messagePaterns;
-                  frame.activeMessage = null;
-                  frame.activeTrace = null;
-                  frame.activeMessagePriors = null;
-                  frame.treemodel = [];
-                  frame.finish = Date.now();
+                  const old = vue.frames.filter(
+                    ({ id }) => id !== vue.currentRecordingId
+                  )
+                  frame.flameData = data
+                  frame.messageData = messagePaterns
+                  frame.activeMessage = null
+                  frame.activeTrace = null
+                  frame.activeMessagePriors = null
+                  frame.treemodel = []
+                  frame.finish = Date.now()
                   // msgmap, msgmapchildren, msgmapdata, top
-                  frame.msgmap = msgmap;
-                  frame.msgmapchildren = msgmapchildren;
-                  frame.msgmapdata = msgmapdata;
+                  frame.msgmap = msgmap
+                  frame.msgmapchildren = msgmapchildren
+                  frame.msgmapdata = msgmapdata
                   // VITOR AQUI
 
                   // console.log('msgmapchildren', msgmapchildren)
                   // console.log('top, top', top)
                   const buildFullTop = (msgmapchildren, top) => {
-                    const topItems = top.items;
+                    const topItems = top.items
 
-                    let count = 0;
-                    const max = Math.pow(Math.max(topItems.length, 10), 3);
+                    let count = 0
+                    const max = Math.pow(Math.max(topItems.length, 10), 3)
 
                     for (const item of topItems) {
-                      let currentItem = item;
-                      count = 0;
+                      let currentItem = item
+                      count = 0
                       while (true && count < max) {
-                        if (currentItem.children && currentItem.children.length) {
-                          currentItem = currentItem.children[0];
+                        if (
+                          currentItem.children &&
+                          currentItem.children.length
+                        ) {
+                          currentItem = currentItem.children[0]
                         } else {
-                          const exists = msgmapchildren[currentItem.id];
+                          const exists = msgmapchildren[currentItem.id]
                           if (exists) {
-                            currentItem.children = exists;
+                            currentItem.children = exists
                           } else {
-                            break;
+                            break
                           }
                         }
-                        count += 1;
+                        count += 1
                       }
                     }
                   }
                   buildFullTop(msgmapchildren, top)
 
-
-                  frame.top = top;
-                  vue.frames = [
-                    ...old,
-                    frame,
-                  ];
-                  vue.buildChart(frame, frame.id);
+                  frame.top = top
+                  vue.frames = [...old, frame]
+                  vue.buildChart(frame, frame.id)
                 }
-                vue.recording = false;
-                vue.currentRecordingId = null;
-                vue.currentDebugRecordingId = null;
+                vue.recording = false
+                vue.currentRecordingId = null
+                vue.currentDebugRecordingId = null
               })
-          });
+          })
       }
     },
     findPattern(pattern) {
@@ -294,26 +343,24 @@ export default {
         })
           .then((rawResponse) => rawResponse.json())
           .then((parsedResponse) => {
-            resolve(parsedResponse);
+            resolve(parsedResponse)
           })
           .catch((err) => reject(err))
       })
     },
     buildChart(dataObject, id) {
-      const chart = flamegraph().width(screen.width * 0.90)
+      const chart = flamegraph().width(screen.width * 0.9)
 
-      chart.label(d => {
+      chart.label((d) => {
         const { data } = d
         const { name, value, _inner } = data
         const { count } = _inner
         return `Action name: ${name}  |  Average execution time: ${value}  |  Number of executions:${count}`
       })
 
-      d3
-        .select(this.$refs[`graphRef-${id}`][0])
+      d3.select(this.$refs[`graphRef-${id}`][0])
         .datum(dataObject.flameData)
         .call(chart)
-
 
       /*
       chart.onClick((node) => {
@@ -329,25 +376,25 @@ export default {
       */
     },
     addMsg(data) {
-      const currentId = this.currentRecordingId;
+      const currentId = this.currentRecordingId
       if (!top[currentId]) {
-        top[currentId] = [];
+        top[currentId] = []
       }
       if (!msgmap[currentId]) {
-        msgmap[currentId] = {};
+        msgmap[currentId] = {}
       }
       if (!msgmapchildren[currentId]) {
-        msgmapchildren[currentId] = {};
+        msgmapchildren[currentId] = {}
       }
       if (!msgmapdata[currentId]) {
-        msgmapdata[currentId] = {};
+        msgmapdata[currentId] = {}
       }
       const meta = data.meta
       const parent = meta.parent
         ? meta.parent
         : meta.parents[0]
-          ? meta.parents[0][1]
-          : null
+        ? meta.parents[0][1]
+        : null
 
       if ('in' === data.debug_kind && !msgmap[currentId][meta.id]) {
         const parent_children = parent
@@ -362,13 +409,13 @@ export default {
           children: [],
           error: false,
           duration: null,
-          num_children: 0
+          num_children: 0,
         }
 
         msgmapdata[currentId][meta.id] = {
           id: meta.id,
           name: data.name,
-          data: data
+          data: data,
         }
 
         parent_children.unshift(entry)
@@ -377,7 +424,8 @@ export default {
       } else if ('out' === data.debug_kind && msgmap[currentId][meta.id]) {
         msgmap[currentId][meta.id].error = data.error
         msgmap[currentId][meta.id].duration = meta.end - meta.start
-        msgmap[currentId][meta.id].num_children = msgmapchildren[currentId][meta.id].length
+        msgmap[currentId][meta.id].num_children =
+          msgmapchildren[currentId][meta.id].length
 
         msgmapdata[currentId][meta.id].data.res = data.res
         msgmapdata[currentId][meta.id].data.err = data.err
@@ -398,32 +446,32 @@ export default {
     },
     loadChildren(id) {
       return (data) => {
-        data.children = msgmapchildren[id][data.id];
+        data.children = msgmapchildren[id][data.id]
       }
     },
     getMessagePriors(message) {
-      if (!message || !message.length) return null;
-      const priors = [];
-      let currentPrior = message[0].raw;
+      if (!message || !message.length) return null
+      const priors = []
+      let currentPrior = message[0].raw
       while (currentPrior.priordef) {
-        priors.unshift({ ...currentPrior, priordef: undefined });
-        currentPrior = currentPrior.priordef;
+        priors.unshift({ ...currentPrior, priordef: undefined })
+        currentPrior = currentPrior.priordef
       }
-      return priors;
+      return priors
     },
     handleSelected(event, index) {
-      const vue = this;
-      vue.frames[index].activeMessage = event;
-      vue.frames[index].activeMessagePriors = vue.getMessagePriors(event);
+      const vue = this
+      vue.frames[index].activeMessage = event
+      vue.frames[index].activeMessagePriors = vue.getMessagePriors(event)
       // Enforce update
-      vue.frames = [...vue.frames];
+      vue.frames = [...vue.frames]
     },
     handleSelectedTrace(event, index) {
-      const vue = this;
-      vue.frames[index].activeTrace = event;
+      const vue = this
+      vue.frames[index].activeTrace = event
 
       // Enforce update
-      vue.frames = [...vue.frames];
+      vue.frames = [...vue.frames]
     },
     getMenuBarTime(item) {
       const options = {
@@ -435,13 +483,16 @@ export default {
         minute: 'numeric',
         second: 'numeric',
       }
-      const startDate = new Date(item.start).toLocaleDateString("en-US", options)
-      let finishDate = 'Active';
+      const startDate = new Date(item.start).toLocaleDateString(
+        'en-US',
+        options
+      )
+      let finishDate = 'Active'
       if (!!item.finish) {
-        finishDate = new Date(item.finish).toLocaleDateString("en-US", options)
+        finishDate = new Date(item.finish).toLocaleDateString('en-US', options)
       }
-      return `${startDate} ------- ${finishDate}`;
-    }
+      return `${startDate} ------- ${finishDate}`
+    },
   },
 }
 </script>

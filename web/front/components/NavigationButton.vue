@@ -8,7 +8,7 @@ export default {
   props: ['title'],
   methods: {
     emitToggleDrawer() {
-      this.$root.$emit('toggle-drawer');
+      this.$root.$emit('toggle-drawer')
     },
   },
 }

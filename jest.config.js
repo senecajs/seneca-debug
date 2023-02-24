@@ -7,5 +7,5 @@ module.exports = {
   watchPathIgnorePatterns: ['dist\\/'],
   collectCoverageFrom: ['src/**/*.ts'],
   coverageProvider: 'v8',
-  roots: ['.']
-};
+  roots: ['.'],
+}

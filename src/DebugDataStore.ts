@@ -1,9 +1,9 @@
 export default class DebugDataStore {
   private top = {
-    items: []
-  };
+    items: [],
+  }
 
-  private msgmap: Record<string, any> = {};
+  private msgmap: Record<string, any> = {}
   private msgmapchildren: Record<string, any> = {}
   private msgmapdata: Record<string, any> = {}
 
@@ -20,9 +20,9 @@ export default class DebugDataStore {
     const meta = data.meta
     const parent = meta.parent
       ? meta.parent
-      : (meta.parents && meta.parents[0])
-        ? meta.parents[0][1]
-        : null
+      : meta.parents && meta.parents[0]
+      ? meta.parents[0][1]
+      : null
 
     if ('in' === data.debug_kind && !this.msgmap[meta.id]) {
       const parent_children = parent
@@ -37,13 +37,13 @@ export default class DebugDataStore {
         children: [],
         error: false,
         duration: null,
-        num_children: 0
+        num_children: 0,
       }
 
       this.msgmapdata[meta.id] = {
         id: meta.id,
         name: data.name,
-        data: data
+        data: data,
       }
 
       parent_children.unshift(entry)
