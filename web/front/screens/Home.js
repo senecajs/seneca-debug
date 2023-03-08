@@ -1,5 +1,5 @@
 const top = {
-  items: []
+  items: [],
 }
 
 var msgmap = {}
@@ -9,7 +9,6 @@ var searchlist = []
 
 import * as d3 from 'd3'
 import * as d3flamegraph from 'd3-flame-graph'
-import * as d3tooltip from 'd3-flame-graph/src/tooltip'
 import VueJsonPretty from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 
@@ -27,7 +26,7 @@ export default {
       flamegraphdata: {
         name: 'root',
         value: 0,
-        children: []
+        children: [],
       },
       flamegraphChart: null,
       toggleButtonMessage: 'Stop recording',
@@ -36,10 +35,10 @@ export default {
       currentClickedStackTracePath: null,
       drilldownPath: [],
       currentSelectedFlamechartNode: null,
-      flamechartCaptureStatus: "",
+      flamechartCaptureStatus: '',
     }
   },
-  created: function() {
+  created: function () {
     const self = this
 
     fetch(`/flame-capture-status`, {
@@ -48,9 +47,9 @@ export default {
       .then((rawResponse) => {
         rawResponse.json().then(({ status }) => {
           if (status) {
-            self.flamechartCaptureStatus = "Stop Flame Data Capture";
+            self.flamechartCaptureStatus = 'Stop Flame Data Capture'
           } else {
-            self.flamechartCaptureStatus = "Start Flame Data Capture";
+            self.flamechartCaptureStatus = 'Start Flame Data Capture'
           }
         })
       })
@@ -58,31 +57,32 @@ export default {
         console.log('err', err)
       })
 
-    this.$root.$on('msg', function(data) {
+    this.$root.$on('msg', function (data) {
       self.addmsg(data)
       if (self.currentSelectedFlamechartNode) {
-        self.applyDrilldown(self.currentSelectedFlamechartNode);
+        self.applyDrilldown(self.currentSelectedFlamechartNode)
       }
     })
-    this.$root.$on('flame', function(data) {
+    this.$root.$on('flame', function (data) {
+      // Got a bug here TODO
       self.handleFlameChart(data)
     })
   },
   computed: {
-    selected: function() {
+    selected: function () {
       if (!this.active.length) return undefined
       const id = this.active[0]
       return msgmapdata[id]
-    }
+    },
   },
 
   watch: {
     currentClickedStackTracePath(prevClicked) {
       if (!prevClicked) {
-        return;
+        return
       }
       setTimeout(() => {
-        this.currentClickedStackTracePath = null;
+        this.currentClickedStackTracePath = null
       }, 300)
     },
     showDrilldownAlert(prevShowDrilldownAlertValue) {
@@ -92,13 +92,13 @@ export default {
         }, 1000)
       }
     },
-    'items.length': function() {
+    'items.length': function () {
       if (this.search_txt) this.search()
     },
-    search_txt: function() {
+    search_txt: function () {
       this.search()
     },
-    filter_txt: function() {
+    filter_txt: function () {
       this.$root.$emit('filter', this.filter_txt)
     },
   },
@@ -108,40 +108,41 @@ export default {
         return ''
       }
       return JSON.stringify(value, null, 2)
-    }
+    },
   },
 
   methods: {
     handleMetaDataClick(nodeData) {
-      const { content, path } = nodeData;
+      const { content, path } = nodeData
       if (!this.currentClickedStackTracePath) {
-        this.currentClickedStackTracePath = content;
-        return;
+        this.currentClickedStackTracePath = content
+        return
       }
-      const possiblePaths = ['root.trace_stack[', 'root.needle_stack['];
+      const possiblePaths = ['root.trace_stack[', 'root.needle_stack[']
       const clickedInMetadata = possiblePaths.reduce((p, c) => {
         return p || path.includes(c)
-      }, false);
+      }, false)
       if (!clickedInMetadata) {
-        return;
+        return
       }
-      const callPath = content.split(' ').find((str) => str[0] === '(' && str[str.length - 1] === ')');
+      const callPath = content
+        .split(' ')
+        .find((str) => str[0] === '(' && str[str.length - 1] === ')')
       if (!callPath) {
-        return;
+        return
       }
-      const finalPath = callPath.substring(1, callPath.length - 1);
+      const finalPath = callPath.substring(1, callPath.length - 1)
       fetch(`${this.$root.expressBaseUrl}/open-vscode`, {
         method: 'POST',
         body: JSON.stringify({ path: finalPath }),
         headers: {
           'Content-Type': 'application/json',
         },
+      }).catch((err) => {
+        console.log('err', err)
       })
-        .catch((err) => {
-          console.log('err', err)
-        })
     },
-    clear: function() {
+    clear: function () {
       searchlist = []
       msgmap = {}
       msgmapchildren = {}
@@ -149,9 +150,10 @@ export default {
       this.items.splice(0, this.items.length)
     },
     toggle() {
-      const active = this.toggleButtonMessage === 'Stop recording' ? false : true
+      const active =
+        this.toggleButtonMessage === 'Stop recording' ? false : true
       fetch(`${this.$root.expressBaseUrl}/toggle?active=${active}`, {
-        method: 'POST'
+        method: 'POST',
       })
         .then((_) => {
           if (this.toggleButtonMessage === 'Stop recording') {
@@ -163,23 +165,26 @@ export default {
         .catch((err) => console.log('err', err))
     },
     toggleFlamechartCapture() {
-      const active = this.flamechartCaptureStatus === "Stop Flame Data Capture" ? false : true;
+      const active =
+        this.flamechartCaptureStatus === 'Stop Flame Data Capture'
+          ? false
+          : true
       fetch(`/toggle-flame?active=${active}`, {
-        method: 'POST'
+        method: 'POST',
       })
         .then(() => {
-          if (this.flamechartCaptureStatus === "Stop Flame Data Capture") {
-            this.flamechartCaptureStatus = "Start Flame Data Capture";
+          if (this.flamechartCaptureStatus === 'Stop Flame Data Capture') {
+            this.flamechartCaptureStatus = 'Start Flame Data Capture'
           } else {
-            this.flamechartCaptureStatus = "Stop Flame Data Capture";
+            this.flamechartCaptureStatus = 'Stop Flame Data Capture'
           }
         })
         .catch((err) => console.log('err', err))
     },
-    load_children: function(data) {
+    load_children: function (data) {
       data.children = msgmapchildren[data.id]
     },
-    addmsg: function(data) {
+    addmsg: function (data) {
       const meta = data.meta
       const parent = meta.parent
         ? meta.parent
@@ -200,13 +205,13 @@ export default {
           children: [],
           error: false,
           duration: null,
-          num_children: 0
+          num_children: 0,
         }
 
         msgmapdata[meta.id] = {
           id: meta.id,
           name: data.name,
-          data: data
+          data: data,
         }
 
         parent_children.unshift(entry)
@@ -226,7 +231,7 @@ export default {
         const searchListData = {
           id: meta.id,
           text: JSON.stringify(msgmapdata[meta.id].data).toLowerCase(),
-          parent: parent
+          parent: parent,
         }
 
         searchlist.push(searchListData)
@@ -253,7 +258,7 @@ export default {
         }
         return null
       }
-      let counter = 0;
+      let counter = 0
       const MAXIMUM_LOOP_COUNTER = 1000000
       while (counter < MAXIMUM_LOOP_COUNTER) {
         const parentId = findParentById(currentId)
@@ -268,9 +273,9 @@ export default {
     },
     setDrilldownMessage(chartNode) {
       const getPatternName = (name) => {
-        const splitted = name.split(" : ")
+        const splitted = name.split(' : ')
         if (!splitted || splitted.length !== 2) {
-          return ""
+          return ''
         }
         return splitted[1].trim()
       }
@@ -278,34 +283,33 @@ export default {
       let chartDrilldown = []
       let currentNode = chartNode
       while (true) {
-        const { data, parent } = currentNode;
+        const { data, parent } = currentNode
         const patternName = getPatternName(data.name)
         if (!patternName) {
-          break;
+          break
         }
-        chartDrilldown.push(patternName);
+        chartDrilldown.push(patternName)
         if (!parent) {
-          break;
+          break
         }
-        currentNode = parent;
+        currentNode = parent
       }
-      this.drilldownPath = chartDrilldown;
+      this.drilldownPath = chartDrilldown
     },
     applyDrilldown(chartNode) {
       const nodeIds = this.getIdsFromChartNode(chartNode)
       if (nodeIds.length) {
-
         const clearVnodeClasses = () => {
           const tree = this.$refs.msgtree.nodes
           Object.keys(tree).forEach((treeKey) => {
-            const node = tree[treeKey];
+            const node = tree[treeKey]
             const vnodeEl = node.vnode.$el
             if (vnodeEl) {
               vnodeEl.classList.remove('unhidable')
             }
           })
         }
-        clearVnodeClasses()  
+        clearVnodeClasses()
 
         nodeIds.forEach((nodeId) => {
           const elem = this.getMessageMapParentListFromId(nodeId)
@@ -331,7 +335,7 @@ export default {
             }
           }
         })
-        this.setDrilldownMessage(chartNode);
+        this.setDrilldownMessage(chartNode)
       } else {
         const tree = this.$refs.msgtree.nodes
         const treeObjectKeyNames = Object.keys(tree)
@@ -350,32 +354,29 @@ export default {
       this.showDrilldownAlert = true
     },
     buildChart() {
-      if(!this.flamegraphChart) {
-        const chart = d3flamegraph.flamegraph().width(screen.width * 0.90)
+      if (!this.flamegraphChart) {
+        const chart = d3flamegraph.flamegraph().width(screen.width * 0.9)
 
-        chart.label(d => {
+        chart.label((d) => {
           const { data } = d
           const { name, value, _inner } = data
           const { count } = _inner
           return `Action name: ${name}  |  Average execution time: ${value}  |  Number of executions:${count}`
         })
-        
-        d3
-          .select(this.$refs.graphRef)
-          .datum(this.flamegraphdata)
-          .call(chart)
+
+        d3.select(this.$refs.graphRef).datum(this.flamegraphdata).call(chart)
 
         chart.onClick((node) => {
-          this.currentSelectedFlamechartNode = node;
+          this.currentSelectedFlamechartNode = node
           this.applyDrilldown(node)
-          
+
           if (node.data.name !== 'root') {
             this.allowChartUpdate = false
           } else {
             this.allowChartUpdate = true
           }
         })
-        
+
         this.flamegraphChart = chart
       } else {
         if (this.allowChartUpdate) {
@@ -384,7 +385,7 @@ export default {
       }
     },
 
-    search: function() {
+    search: function () {
       var self = this
       self.term = this.search_txt.toLowerCase()
 
@@ -394,7 +395,7 @@ export default {
         const item = searchlist[i]
         const found = self.term && item.text.indexOf(self.term) !== -1
 
-        self.walkup(function(item) {
+        self.walkup(function (item) {
           const node = list[item.id]
           const vnode = node && node.vnode
           const el = vnode && vnode.$el
@@ -409,7 +410,7 @@ export default {
       }
     },
 
-    walk: function(op, item) {
+    walk: function (op, item) {
       if (item) {
         op(item)
       }
@@ -419,13 +420,13 @@ export default {
         this.walk(op, children[i])
       }
     },
-    walkup: function(op, item, found) {
+    walkup: function (op, item, found) {
       if (item) {
         op(item, found)
       }
       const parent = item && item.parent
       if (!parent) return
       this.walkup(op, searchlist[parent], found)
-    }
-  }
+    },
+  },
 }

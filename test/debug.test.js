@@ -15,7 +15,7 @@ const Seneca = require('seneca')
 const Optioner = require('optioner')
 const Joi = Optioner.Joi
 
-const DebugPlugin = require('../src/debug');
+const DebugPlugin = require('../src/debug')
 
 // undefined bug - Riona is looking through it.
 // test('maintain', Maintain);
@@ -27,14 +27,14 @@ test('happy', async () => {
 
   await si.ready()
 
-  si.message('a:1', async function(msg) {
+  si.message('a:1', async function (msg) {
     return { x: msg.x }
   })
-    .message('b:1', async function(msg) {
+    .message('b:1', async function (msg) {
       const a1 = await this.post('a:1,x:2')
       return { x: a1.x, y: msg.y }
     })
-    .message('c:1', async function(msg) {
+    .message('c:1', async function (msg) {
       throw new Error('C1')
     })
 
@@ -57,7 +57,7 @@ function seneca_instance(fin, testmode) {
     .use(DebugPlugin, {
       express: {
         port: 9099,
-        host: 'localhost'
+        host: 'localhost',
       },
       ws: {
         port: 9098,
@@ -65,7 +65,7 @@ function seneca_instance(fin, testmode) {
       wspath: '/debug',
       store: false,
       test: false,
-      prod: false
+      prod: false,
     })
     .use('seneca-joi')
     .use('entity')
