@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
-const gubu_1 = require("gubu");
 const uuid_1 = require("uuid");
 const DebugDataStore_1 = __importDefault(require("./DebugDataStore"));
 const { bootWebServers } = require('../web');
@@ -270,10 +269,14 @@ function debug(options) {
             c.send(JSON.stringify(inwardData));
         });
     });
-    this.add('role:seneca,cmd:close', function closeDebug(_msg, reply) {
+    // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via sys:seneca,cmd:close.
+    const closePattern = seneca.version.startsWith('3.')
+        ? 'role:seneca,cmd:close'
+        : 'sys:seneca,cmd:close';
+    this.add(closePattern, function closeDebug(msg, reply) {
         seneca.shared.expressApp.close();
         seneca.shared.wsServer.close();
-        reply();
+        this.prior(msg, reply);
     });
     this.add('sys:debug,area:trace', function debugTraceActivation(msg, reply) {
         const { active } = msg;
@@ -341,7 +344,9 @@ function debug(options) {
         }, 3000);
     }
 }
-const defaults = (0, gubu_1.Open)({
+// A plain object: Seneca 3 cannot read a shape at the root of the
+// defaults. On Seneca 4, options not listed here are refused.
+const defaults = {
     /*
      * Express server config
      */
@@ -364,7 +369,11 @@ const defaults = (0, gubu_1.Open)({
      * Will log the metadata to the console
      */
     logToConsole: false,
-});
+    /*
+     * Show flame graphs, if the @seneca/flame plugin is loaded
+     */
+    flame: false,
+};
 async function preload(seneca) { }
 Object.assign(debug, { defaults, preload });
 exports.default = debug;

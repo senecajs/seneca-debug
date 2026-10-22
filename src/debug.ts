@@ -1,5 +1,4 @@
 import Stringify from 'json-stringify-safe'
-import { Open } from 'gubu'
 import { SenecaSharedInstance } from './types'
 import { v4 as uuidv4 } from 'uuid'
 import DebugDataStore from './DebugDataStore'
@@ -309,15 +308,17 @@ function debug(this: any, options: any) {
     })
   })
 
-  this.add(
-    'role:seneca,cmd:close',
-    function closeDebug(this: any, _msg: any, reply: any) {
-      seneca.shared.expressApp.close()
-      seneca.shared.wsServer.close()
+  // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via sys:seneca,cmd:close.
+  const closePattern = seneca.version.startsWith('3.')
+    ? 'role:seneca,cmd:close'
+    : 'sys:seneca,cmd:close'
 
-      reply()
-    }
-  )
+  this.add(closePattern, function closeDebug(this: any, msg: any, reply: any) {
+    seneca.shared.expressApp.close()
+    seneca.shared.wsServer.close()
+
+    this.prior(msg, reply)
+  })
 
   this.add(
     'sys:debug,area:trace',
@@ -408,7 +409,9 @@ function debug(this: any, options: any) {
   }
 }
 
-const defaults = Open({
+// A plain object: Seneca 3 cannot read a shape at the root of the
+// defaults. On Seneca 4, options not listed here are refused.
+const defaults = {
   /*
    * Express server config
    */
@@ -431,7 +434,11 @@ const defaults = Open({
    * Will log the metadata to the console
    */
   logToConsole: false,
-})
+  /*
+   * Show flame graphs, if the @seneca/flame plugin is loaded
+   */
+  flame: false,
+}
 
 async function preload(seneca: any) {}
 

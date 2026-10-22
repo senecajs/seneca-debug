@@ -63,10 +63,8 @@ function seneca_instance(fin, testmode) {
         port: 9098,
       },
       wspath: '/debug',
-      store: false,
-      test: false,
       prod: false,
     })
     .use('seneca-joi')
-    .use('entity')
+    .use('@seneca/entity')
 }
