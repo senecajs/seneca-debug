@@ -9,8 +9,8 @@ async function setup() {
   si.test('print')
     .use('promisify')
     .use('seneca-joi')
-    .use('entity')
-    .use('debug', { test: true })
+    .use('@seneca/entity')
+    .use('debug')
 
     .message('a:1', async function (msg) {
       return { x: msg.x }
