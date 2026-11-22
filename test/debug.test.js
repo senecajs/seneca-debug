@@ -12,6 +12,18 @@ const DebugPlugin = require('../src/debug')
 const EXPRESS_PORT = +(process.env.SENECA_DEBUG_TEST_EXPRESS_PORT || 0)
 const WS_PORT = +(process.env.SENECA_DEBUG_TEST_WS_PORT || 0)
 
+// Instances to close after each test, also when it fails.
+let open = []
+afterEach(async () => {
+  const closing = open
+  open = []
+  for (const si of closing) {
+    if (!si.flags.closed) {
+      await si.close()
+    }
+  }
+})
+
 test('happy', async () => {
   process.argv.push('--seneca.print.tree')
 
@@ -36,8 +48,8 @@ test('happy', async () => {
   await expect(si.post('c:1')).rejects.toThrow('C1')
 
   // The default debug store recorded the messages.
-  const { msgmap } = shared(si).debugDataStores[0].debugDataStore.get()
-  const patterns = Object.values(msgmap).map((m) => m.meta.pattern)
+  const { msgmapdata } = shared(si).debugDataStores[0].debugDataStore.get()
+  const patterns = Object.values(msgmapdata).map((m) => m.data.meta.pattern)
   expect(patterns).toContain('b:1')
   expect(patterns).toContain('a:1')
 
@@ -90,7 +102,9 @@ test('debug-store', async () => {
     id: created.id,
   })
   expect(destroyed.success).toEqual(true)
-  const patterns = Object.values(destroyed.msgmap).map((m) => m.meta.pattern)
+  const patterns = Object.values(destroyed.msgmapdata).map(
+    (m) => m.data.meta.pattern
+  )
   expect(patterns).toContain('d:1')
   expect(shared(si).debugDataStores.length).toEqual(1)
 
@@ -110,7 +124,7 @@ test('debug-store', async () => {
 test('flame', async () => {
   const capture = []
 
-  const si = Seneca({ legacy: false })
+  const si = track(Seneca({ legacy: false }))
     .test()
     .use(function flame() {
       this.message('sys:flame', async function (msg) {
@@ -134,7 +148,7 @@ test('flame', async () => {
   expect(capture).toEqual([false, true])
 
   // Without option flame, sys:flame is not called.
-  const si0 = Seneca({ legacy: false })
+  const si0 = track(Seneca({ legacy: false }))
     .test()
     .use(function flame() {
       this.message('sys:flame', async function (msg) {
@@ -155,7 +169,7 @@ test('flame', async () => {
 })
 
 function seneca_instance(fin, testmode) {
-  return Seneca({ legacy: false })
+  return track(Seneca({ legacy: false }))
     .test(fin, testmode)
     .use(DebugPlugin, {
       express: {
@@ -169,6 +183,11 @@ function seneca_instance(fin, testmode) {
       prod: false,
     })
     .use('@seneca/entity')
+}
+
+function track(si) {
+  open.push(si)
+  return si
 }
 
 // The plugin's shared resources: web servers and debug stores.

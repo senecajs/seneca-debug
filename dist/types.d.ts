@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { IncomingMessage, Server, ServerResponse } from 'http';
 import DebugDataStore from './DebugDataStore';
 export interface DebugDataStoreItem {

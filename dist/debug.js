@@ -6,7 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
 const uuid_1 = require("uuid");
 const DebugDataStore_1 = __importDefault(require("./DebugDataStore"));
-const { bootWebServers } = require('../web');
+// The file itself: web/package.json describes the browser front end only.
+const { bootWebServers } = require('../web/index.js');
 function newInward(seneca, spec, options) {
     const pluginName = spec.data.msg['plugin$'];
     if (pluginName && pluginName.name && pluginName.name === 'debug') {
@@ -269,14 +270,16 @@ function debug(options) {
             c.send(JSON.stringify(inwardData));
         });
     });
-    // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via sys:seneca,cmd:close.
-    const closePattern = seneca.version.startsWith('3.')
-        ? 'role:seneca,cmd:close'
-        : 'sys:seneca,cmd:close';
-    this.add(closePattern, function closeDebug(msg, reply) {
-        seneca.shared.expressApp.close();
-        seneca.shared.wsServer.close();
-        this.prior(msg, reply);
+    let flameInterval;
+    // Close the web and WebSocket servers, and stop polling flame, when the
+    // instance closes. Seneca runs the close actions of other plugins as well.
+    this.destroy(function closeDebug() {
+        var _a, _b;
+        if (flameInterval) {
+            clearInterval(flameInterval);
+        }
+        (_a = seneca.shared.expressApp) === null || _a === void 0 ? void 0 : _a.close();
+        (_b = seneca.shared.wsServer) === null || _b === void 0 ? void 0 : _b.close();
     });
     this.add('sys:debug,area:trace', function debugTraceActivation(msg, reply) {
         const { active } = msg;
@@ -329,7 +332,7 @@ function debug(options) {
     });
     const { flame } = seneca.list_plugins();
     if (flame && options.flame) {
-        setInterval(() => {
+        flameInterval = setInterval(() => {
             seneca.act('sys:flame,cmd:get,cached:true', function response(err, out, meta) {
                 if (err) {
                     return;
@@ -344,8 +347,7 @@ function debug(options) {
         }, 3000);
     }
 }
-// A plain object: Seneca 3 cannot read a shape at the root of the
-// defaults. On Seneca 4, options not listed here are refused.
+// Options not listed here are refused.
 const defaults = {
     /*
      * Express server config
