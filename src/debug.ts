@@ -2,7 +2,8 @@ import Stringify from 'json-stringify-safe'
 import { SenecaSharedInstance } from './types'
 import { v4 as uuidv4 } from 'uuid'
 import DebugDataStore from './DebugDataStore'
-const { bootWebServers } = require('../web')
+// The file itself: web/package.json describes the browser front end only.
+const { bootWebServers } = require('../web/index.js')
 
 function newInward(seneca: any, spec: any, options: any) {
   const pluginName = spec.data.msg['plugin$']
@@ -308,16 +309,16 @@ function debug(this: any, options: any) {
     })
   })
 
-  // Seneca 3 closes via role:seneca,cmd:close; Seneca 4 via sys:seneca,cmd:close.
-  const closePattern = seneca.version.startsWith('3.')
-    ? 'role:seneca,cmd:close'
-    : 'sys:seneca,cmd:close'
+  let flameInterval: ReturnType<typeof setInterval> | undefined
 
-  this.add(closePattern, function closeDebug(this: any, msg: any, reply: any) {
-    seneca.shared.expressApp.close()
-    seneca.shared.wsServer.close()
-
-    this.prior(msg, reply)
+  // Close the web and WebSocket servers, and stop polling flame, when the
+  // instance closes. Seneca runs the close actions of other plugins as well.
+  this.destroy(function closeDebug() {
+    if (flameInterval) {
+      clearInterval(flameInterval)
+    }
+    seneca.shared.expressApp?.close()
+    seneca.shared.wsServer?.close()
   })
 
   this.add(
@@ -388,7 +389,7 @@ function debug(this: any, options: any) {
 
   const { flame } = seneca.list_plugins()
   if (flame && options.flame) {
-    setInterval(() => {
+    flameInterval = setInterval(() => {
       seneca.act(
         'sys:flame,cmd:get,cached:true',
         function response(err: any, out: any, meta: any) {
@@ -409,8 +410,7 @@ function debug(this: any, options: any) {
   }
 }
 
-// A plain object: Seneca 3 cannot read a shape at the root of the
-// defaults. On Seneca 4, options not listed here are refused.
+// Options not listed here are refused.
 const defaults = {
   /*
    * Express server config

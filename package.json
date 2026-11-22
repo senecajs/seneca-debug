@@ -6,7 +6,6 @@
   "scripts": {
     "watch": "webpack --watch",
     "test": "jest --coverage",
-    "coveralls": "lab -s -P test -r lcov | coveralls",
     "clean": "rm -rf node_modules yarn.lock package-lock.json",
     "reset": "npm run clean && npm install && npm test",
     "repo-tag": "REPO_VERSION=`node -e \"console.log(require('./package').version)\"` && echo TAG: v$REPO_VERSION && git commit -a -m v$REPO_VERSION && git push && git tag v$REPO_VERSION && git push --tags;",
@@ -17,14 +16,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/voxgig/seneca-debug.git"
+    "url": "git+https://github.com/senecajs/seneca-debug.git"
   },
   "author": "Richard Rodger (richardrodger.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/voxgig/seneca-debug/issues"
+    "url": "https://github.com/senecajs/seneca-debug/issues"
   },
-  "homepage": "https://github.com/voxgig/seneca-debug#readme",
+  "homepage": "https://github.com/senecajs/seneca-debug#readme",
   "contributors": [
     "Vitor Lelis (https://github.com/vitorclelis96)",
     "Georgi Griffiths (https://github.com/georgigriffiths)"
@@ -36,40 +35,34 @@
     "dist",
     "web"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
-    "node": ">=8"
+    "node": ">=24"
   },
   "dependencies": {
-    "@seneca/repl": "^5.1.0",
     "express": "^4.18.2",
     "json-stringify-safe": "^5.0.1",
-    "typescript": "^4.9.5",
     "uuid": "^9.0.0",
     "ws": "^8.13.0"
   },
   "devDependencies": {
     "@seneca/entity": "^29.0.0",
-    "@seneca/maintain": "^0.0.27",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.4.4",
     "@types/json-stringify-safe": "^5.0.0",
-    "@types/node": "^18.15.3",
+    "@types/node": "^24.0.0",
     "@types/uuid": "^9.0.1",
     "@types/ws": "^8.5.4",
-    "code": "5",
-    "coveralls": "3",
     "jest": "^29.5.0",
-    "lab": "^18.0.2",
     "prettier": "2",
-    "seneca": "^4.0.0-rc5",
-    "seneca-joi": "^7.0.2",
-    "seneca-msg-test": "^3.4.0",
-    "seneca-plugin-validator": "0",
-    "seneca-promisify": "3.4.0",
+    "seneca": "^4.0.0",
     "ts-jest": "^29.0.5",
+    "typescript": "^5.9.3",
     "webpack-cli": "^5.0.1"
   },
   "peerDependencies": {
-    "seneca": ">=3.38||>=4.0.0-rc5"
+    "seneca": "^4.0.0"
   }
 }

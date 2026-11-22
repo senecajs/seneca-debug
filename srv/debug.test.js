@@ -7,10 +7,8 @@ async function setup() {
   const si = Seneca()
 
   si.test('print')
-    .use('promisify')
-    .use('seneca-joi')
     .use('@seneca/entity')
-    .use('debug')
+    .use(debug)
 
     .message('a:1', async function (msg) {
       return { x: msg.x }
