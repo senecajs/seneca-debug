@@ -22,6 +22,9 @@ history.
   `@seneca/flame`. The close action is registered with `this.destroy`, so
   the close actions of other plugins run as well (D4). 2.1.0 used
   `role:seneca,cmd:close` and did not call them.
+* `seneca.close()` ends the connections that are still open, such as a
+  connected debug UI, and resolves once both servers have closed. 2.1.0
+  left them open, so the servers stayed up and kept the process running.
 * The runtime dependencies `@seneca/repl` (unused) and `typescript` (needed
   only to build) are removed.
 * The web server module is loaded by its file name, so Node.js no longer

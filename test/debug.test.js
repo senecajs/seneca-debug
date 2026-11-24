@@ -1,7 +1,10 @@
 /* Copyright (c) 2018-2026 Voxgig and other contributors, MIT License */
 'use strict'
 
+const Net = require('node:net')
+
 const Seneca = require('seneca')
+const WebSocket = require('ws')
 
 const DebugPlugin = require('../src/debug')
 
@@ -119,6 +122,58 @@ test('debug-store', async () => {
   await si.close()
 })
 
+// Connections that are still open, such as the debug UI's WebSocket, are
+// ended by seneca.close(), which resolves once both servers have closed.
+// Otherwise they keep the servers open, and the process alive.
+test('close-connections', async () => {
+  const si = seneca_instance()
+  await si.ready()
+
+  const { expressApp, wsServer } = shared(si)
+
+  const client = new WebSocket('ws://127.0.0.1:' + wsServer.address().port)
+  const clientOpen = new Promise((resolve, reject) =>
+    client.on('open', resolve).on('error', reject)
+  )
+  const clientClosed = new Promise((resolve) => client.on('close', resolve))
+
+  // An HTTP request in progress: its body has not arrived.
+  const socket = Net.connect(expressApp.address().port, '127.0.0.1')
+  const socketOpen = new Promise((resolve, reject) =>
+    socket.on('connect', resolve).on('error', reject)
+  )
+  const socketClosed = new Promise((resolve) => socket.on('close', resolve))
+  const requested = new Promise((resolve) =>
+    expressApp.once('request', resolve)
+  )
+
+  try {
+    await clientOpen
+    expect(wsServer.clients.size).toEqual(1)
+
+    await socketOpen
+    socket.write(
+      'POST /toggle HTTP/1.1\r\nHost: localhost\r\n' +
+        'Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{'
+    )
+    await requested
+
+    const closed = []
+    expressApp.on('close', () => closed.push('express'))
+    wsServer.on('close', () => closed.push('ws'))
+
+    await si.close()
+
+    expect(closed.sort()).toEqual(['express', 'ws'])
+    expect(wsServer.clients.size).toEqual(0)
+    expect(await within(clientClosed, 1000)).toEqual(true)
+    expect(await within(socketClosed, 1000)).toEqual(true)
+  } finally {
+    client.terminate()
+    socket.destroy()
+  }
+})
+
 // With option flame and a plugin named flame loaded, the trace toggle is
 // passed on as sys:flame,capture:<bool>, the message @seneca/flame handles.
 test('flame', async () => {
@@ -183,6 +238,15 @@ function seneca_instance(fin, testmode) {
       prod: false,
     })
     .use('@seneca/entity')
+}
+
+// Resolves to true if the promise resolves within ms milliseconds.
+function within(promise, ms) {
+  let timer
+  return Promise.race([
+    promise.then(() => true),
+    new Promise((resolve) => (timer = setTimeout(resolve, ms, false))),
+  ]).finally(() => clearTimeout(timer))
 }
 
 function track(si) {

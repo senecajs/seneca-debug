@@ -273,13 +273,26 @@ function debug(options) {
     let flameInterval;
     // Close the web and WebSocket servers, and stop polling flame, when the
     // instance closes. Seneca runs the close actions of other plugins as well.
-    this.destroy(function closeDebug() {
-        var _a, _b;
+    this.destroy(async function closeDebug() {
         if (flameInterval) {
             clearInterval(flameInterval);
         }
-        (_a = seneca.shared.expressApp) === null || _a === void 0 ? void 0 : _a.close();
-        (_b = seneca.shared.wsServer) === null || _b === void 0 ? void 0 : _b.close();
+        // A server closes once its connections have ended, so end them: a
+        // connected debug UI, or a request in progress, would otherwise keep the
+        // server open, and the process alive. Wait until both have closed.
+        const { expressApp, wsServer } = seneca.shared;
+        await Promise.all([
+            expressApp &&
+                new Promise((resolve) => {
+                    expressApp.close(resolve);
+                    expressApp.closeAllConnections();
+                }),
+            wsServer &&
+                new Promise((resolve) => {
+                    wsServer.close(resolve);
+                    wsServer.clients.forEach((c) => c.terminate());
+                }),
+        ]);
     });
     this.add('sys:debug,area:trace', function debugTraceActivation(msg, reply) {
         const { active } = msg;
