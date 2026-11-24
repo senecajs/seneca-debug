@@ -21,8 +21,6 @@ function setupSeneca() {
         port: 8007,
       },
       wspath: '/debug',
-      store: false,
-      test: false,
       prod: false,
       flame: true,
     })

@@ -9,6 +9,14 @@
 | ![Voxgig](https://www.voxgig.com/res/img/vgt01r.png) | This open source module is sponsored and supported by [Voxgig](https://www.voxgig.com). |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
 
+## Install
+
+Requires Seneca 4 and Node.js 24 or later.
+
+```sh
+npm install seneca@^4 @seneca/debug
+```
+
 ## Quick Example
 
 ```
@@ -20,8 +28,8 @@
 ## Implementations
 
 [badgecoveralls]: https://coveralls.io/repos/voxgig/seneca-debug/badge.svg?branch=master&service=github
-[badgenpm]: https://badge.fury.io/js/seneca-debug.svg
+[badgenpm]: https://badge.fury.io/js/@seneca%2Fdebug.svg
 [badgetravis]: https://travis-ci.org/voxgig/seneca-debug.svg?branch=master
 [coveralls]: https://coveralls.io/github/voxgig/seneca-debug?branch=master
-[npm]: https://www.npmjs.com/package/seneca-debug
+[npm]: https://www.npmjs.com/package/@seneca/debug
 [travis]: https://travis-ci.org/voxgig/seneca-debug?branch=master

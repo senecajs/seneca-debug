@@ -1,9 +1,9 @@
 import Stringify from 'json-stringify-safe'
-import { Open } from 'gubu'
 import { SenecaSharedInstance } from './types'
 import { v4 as uuidv4 } from 'uuid'
 import DebugDataStore from './DebugDataStore'
-const { bootWebServers } = require('../web')
+// The file itself: web/package.json describes the browser front end only.
+const { bootWebServers } = require('../web/index.js')
 
 function newInward(seneca: any, spec: any, options: any) {
   const pluginName = spec.data.msg['plugin$']
@@ -309,15 +309,32 @@ function debug(this: any, options: any) {
     })
   })
 
-  this.add(
-    'role:seneca,cmd:close',
-    function closeDebug(this: any, _msg: any, reply: any) {
-      seneca.shared.expressApp.close()
-      seneca.shared.wsServer.close()
+  let flameInterval: ReturnType<typeof setInterval> | undefined
 
-      reply()
+  // Close the web and WebSocket servers, and stop polling flame, when the
+  // instance closes. Seneca runs the close actions of other plugins as well.
+  this.destroy(async function closeDebug() {
+    if (flameInterval) {
+      clearInterval(flameInterval)
     }
-  )
+
+    // A server closes once its connections have ended, so end them: a
+    // connected debug UI, or a request in progress, would otherwise keep the
+    // server open, and the process alive. Wait until both have closed.
+    const { expressApp, wsServer } = seneca.shared as SenecaSharedInstance
+    await Promise.all([
+      expressApp &&
+        new Promise((resolve) => {
+          expressApp.close(resolve)
+          expressApp.closeAllConnections()
+        }),
+      wsServer &&
+        new Promise((resolve) => {
+          wsServer.close(resolve)
+          wsServer.clients.forEach((c: any) => c.terminate())
+        }),
+    ])
+  })
 
   this.add(
     'sys:debug,area:trace',
@@ -387,7 +404,7 @@ function debug(this: any, options: any) {
 
   const { flame } = seneca.list_plugins()
   if (flame && options.flame) {
-    setInterval(() => {
+    flameInterval = setInterval(() => {
       seneca.act(
         'sys:flame,cmd:get,cached:true',
         function response(err: any, out: any, meta: any) {
@@ -408,7 +425,8 @@ function debug(this: any, options: any) {
   }
 }
 
-const defaults = Open({
+// Options not listed here are refused.
+const defaults = {
   /*
    * Express server config
    */
@@ -431,7 +449,11 @@ const defaults = Open({
    * Will log the metadata to the console
    */
   logToConsole: false,
-})
+  /*
+   * Show flame graphs, if the @seneca/flame plugin is loaded
+   */
+  flame: false,
+}
 
 async function preload(seneca: any) {}
 

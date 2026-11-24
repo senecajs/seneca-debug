@@ -1,24 +1,31 @@
-/* Copyright (c) 2018-2022 Voxgig and other contributors, MIT License */
+/* Copyright (c) 2018-2026 Voxgig and other contributors, MIT License */
 'use strict'
 
-const Util = require('util')
+const Net = require('node:net')
 
-const Lab = require('lab')
-const Code = require('code')
-const lab = (exports.lab = Lab.script())
-const expect = Code.expect
-
-const { Maintain } = require('@seneca/maintain')
-
-const PluginValidator = require('seneca-plugin-validator')
 const Seneca = require('seneca')
-const Optioner = require('optioner')
-const Joi = Optioner.Joi
+const WebSocket = require('ws')
 
 const DebugPlugin = require('../src/debug')
 
-// undefined bug - Riona is looking through it.
-// test('maintain', Maintain);
+// Port 0 lets the operating system choose free ports, so that test runs in
+// parallel do not clash. Set SENECA_DEBUG_TEST_EXPRESS_PORT and
+// SENECA_DEBUG_TEST_WS_PORT to use fixed ports instead (earlier versions of
+// this test used 9099 and 9098).
+const EXPRESS_PORT = +(process.env.SENECA_DEBUG_TEST_EXPRESS_PORT || 0)
+const WS_PORT = +(process.env.SENECA_DEBUG_TEST_WS_PORT || 0)
+
+// Instances to close after each test, also when it fails.
+let open = []
+afterEach(async () => {
+  const closing = open
+  open = []
+  for (const si of closing) {
+    if (!si.flags.closed) {
+      await si.close()
+    }
+  }
+})
 
 test('happy', async () => {
   process.argv.push('--seneca.print.tree')
@@ -39,34 +46,215 @@ test('happy', async () => {
     })
 
   const out = await si.post('b:1,y:3')
-  expect(out).equal({ x: 2, y: 3 })
+  expect(out).toEqual({ x: 2, y: 3 })
 
-  try {
-    await si.post('c:1')
-  } catch (e) {
-    expect(e.message).contains('C1')
-  }
+  await expect(si.post('c:1')).rejects.toThrow('C1')
+
+  // The default debug store recorded the messages.
+  const { msgmapdata } = shared(si).debugDataStores[0].debugDataStore.get()
+  const patterns = Object.values(msgmapdata).map((m) => m.data.meta.pattern)
+  expect(patterns).toContain('b:1')
+  expect(patterns).toContain('a:1')
 
   await si.close()
 })
 
+test('web', async () => {
+  const si = seneca_instance()
+  await si.ready()
+
+  const { expressApp, wsServer } = shared(si)
+  const base = 'http://127.0.0.1:' + expressApp.address().port
+
+  const config = await (await fetch(base + '/config')).json()
+  expect(config).toEqual({ port: WS_PORT, expressPort: EXPRESS_PORT })
+
+  expect(shared(si).active).toEqual(true)
+  let res = await fetch(base + '/toggle?active=false', { method: 'POST' })
+  expect(await res.json()).toEqual({ ok: true })
+  expect(shared(si).active).toEqual(false)
+
+  res = await fetch(base + '/toggle?active=true', { method: 'POST' })
+  expect(await res.json()).toEqual({ ok: true })
+  expect(shared(si).active).toEqual(true)
+
+  expect(wsServer.address().port).toBeGreaterThan(0)
+
+  await si.close()
+
+  // seneca.close() closes the web and WebSocket servers.
+  expect(expressApp.listening).toEqual(false)
+  expect(wsServer.address()).toEqual(null)
+})
+
+test('debug-store', async () => {
+  const si = seneca_instance()
+  await si.ready()
+
+  const created = await si.post('sys:debug,cmd:create_debug_store')
+  expect(created.success).toEqual(true)
+  expect(typeof created.id).toEqual('string')
+  expect(shared(si).debugDataStores.length).toEqual(2)
+
+  si.message('d:1', async function (msg) {
+    return { d: 1 }
+  })
+  await si.post('d:1')
+
+  const destroyed = await si.post('sys:debug,cmd:destroy_debug_store', {
+    id: created.id,
+  })
+  expect(destroyed.success).toEqual(true)
+  const patterns = Object.values(destroyed.msgmapdata).map(
+    (m) => m.data.meta.pattern
+  )
+  expect(patterns).toContain('d:1')
+  expect(shared(si).debugDataStores.length).toEqual(1)
+
+  expect(
+    (await si.post('sys:debug,cmd:destroy_debug_store')).success
+  ).toEqual(false)
+  expect(
+    (await si.post('sys:debug,cmd:destroy_debug_store,id:not-a-store'))
+      .success
+  ).toEqual(false)
+
+  await si.close()
+})
+
+// Connections that are still open, such as the debug UI's WebSocket, are
+// ended by seneca.close(), which resolves once both servers have closed.
+// Otherwise they keep the servers open, and the process alive.
+test('close-connections', async () => {
+  const si = seneca_instance()
+  await si.ready()
+
+  const { expressApp, wsServer } = shared(si)
+
+  const client = new WebSocket('ws://127.0.0.1:' + wsServer.address().port)
+  const clientOpen = new Promise((resolve, reject) =>
+    client.on('open', resolve).on('error', reject)
+  )
+  const clientClosed = new Promise((resolve) => client.on('close', resolve))
+
+  // An HTTP request in progress: its body has not arrived.
+  const socket = Net.connect(expressApp.address().port, '127.0.0.1')
+  const socketOpen = new Promise((resolve, reject) =>
+    socket.on('connect', resolve).on('error', reject)
+  )
+  const socketClosed = new Promise((resolve) => socket.on('close', resolve))
+  const requested = new Promise((resolve) =>
+    expressApp.once('request', resolve)
+  )
+
+  try {
+    await clientOpen
+    expect(wsServer.clients.size).toEqual(1)
+
+    await socketOpen
+    socket.write(
+      'POST /toggle HTTP/1.1\r\nHost: localhost\r\n' +
+        'Content-Type: application/json\r\nContent-Length: 100\r\n\r\n{'
+    )
+    await requested
+
+    const closed = []
+    expressApp.on('close', () => closed.push('express'))
+    wsServer.on('close', () => closed.push('ws'))
+
+    await si.close()
+
+    expect(closed.sort()).toEqual(['express', 'ws'])
+    expect(wsServer.clients.size).toEqual(0)
+    expect(await within(clientClosed, 1000)).toEqual(true)
+    expect(await within(socketClosed, 1000)).toEqual(true)
+  } finally {
+    client.terminate()
+    socket.destroy()
+  }
+})
+
+// With option flame and a plugin named flame loaded, the trace toggle is
+// passed on as sys:flame,capture:<bool>, the message @seneca/flame handles.
+test('flame', async () => {
+  const capture = []
+
+  const si = track(Seneca({ legacy: false }))
+    .test()
+    .use(function flame() {
+      this.message('sys:flame', async function (msg) {
+        capture.push(msg.capture)
+        return { capture: msg.capture }
+      })
+    })
+    .use(DebugPlugin, {
+      express: { port: EXPRESS_PORT },
+      ws: { port: WS_PORT },
+      flame: true,
+    })
+
+  await si.ready()
+
+  await si.post('sys:debug,area:trace,active:false')
+  expect(shared(si).active).toEqual(false)
+  await si.post('sys:debug,area:trace,active:true')
+  expect(shared(si).active).toEqual(true)
+
+  expect(capture).toEqual([false, true])
+
+  // Without option flame, sys:flame is not called.
+  const si0 = track(Seneca({ legacy: false }))
+    .test()
+    .use(function flame() {
+      this.message('sys:flame', async function (msg) {
+        capture.push(msg.capture)
+        return { capture: msg.capture }
+      })
+    })
+    .use(DebugPlugin, {
+      express: { port: EXPRESS_PORT },
+      ws: { port: WS_PORT },
+    })
+  await si0.ready()
+  await si0.post('sys:debug,area:trace,active:false')
+  expect(capture).toEqual([false, true])
+
+  await si.close()
+  await si0.close()
+})
+
 function seneca_instance(fin, testmode) {
-  return Seneca({ death_delay: 0 })
+  return track(Seneca({ legacy: false }))
     .test(fin, testmode)
-    .use('promisify')
     .use(DebugPlugin, {
       express: {
-        port: 9099,
+        port: EXPRESS_PORT,
         host: 'localhost',
       },
       ws: {
-        port: 9098,
+        port: WS_PORT,
       },
       wspath: '/debug',
-      store: false,
-      test: false,
       prod: false,
     })
-    .use('seneca-joi')
-    .use('entity')
+    .use('@seneca/entity')
+}
+
+// Resolves to true if the promise resolves within ms milliseconds.
+function within(promise, ms) {
+  let timer
+  return Promise.race([
+    promise.then(() => true),
+    new Promise((resolve) => (timer = setTimeout(resolve, ms, false))),
+  ]).finally(() => clearTimeout(timer))
+}
+
+function track(si) {
+  open.push(si)
+  return si
+}
+
+// The plugin's shared resources: web servers and debug stores.
+function shared(si) {
+  return si.find_plugin('debug').shared
 }

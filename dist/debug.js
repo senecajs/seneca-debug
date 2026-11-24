@@ -4,10 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const json_stringify_safe_1 = __importDefault(require("json-stringify-safe"));
-const gubu_1 = require("gubu");
 const uuid_1 = require("uuid");
 const DebugDataStore_1 = __importDefault(require("./DebugDataStore"));
-const { bootWebServers } = require('../web');
+// The file itself: web/package.json describes the browser front end only.
+const { bootWebServers } = require('../web/index.js');
 function newInward(seneca, spec, options) {
     const pluginName = spec.data.msg['plugin$'];
     if (pluginName && pluginName.name && pluginName.name === 'debug') {
@@ -270,10 +270,29 @@ function debug(options) {
             c.send(JSON.stringify(inwardData));
         });
     });
-    this.add('role:seneca,cmd:close', function closeDebug(_msg, reply) {
-        seneca.shared.expressApp.close();
-        seneca.shared.wsServer.close();
-        reply();
+    let flameInterval;
+    // Close the web and WebSocket servers, and stop polling flame, when the
+    // instance closes. Seneca runs the close actions of other plugins as well.
+    this.destroy(async function closeDebug() {
+        if (flameInterval) {
+            clearInterval(flameInterval);
+        }
+        // A server closes once its connections have ended, so end them: a
+        // connected debug UI, or a request in progress, would otherwise keep the
+        // server open, and the process alive. Wait until both have closed.
+        const { expressApp, wsServer } = seneca.shared;
+        await Promise.all([
+            expressApp &&
+                new Promise((resolve) => {
+                    expressApp.close(resolve);
+                    expressApp.closeAllConnections();
+                }),
+            wsServer &&
+                new Promise((resolve) => {
+                    wsServer.close(resolve);
+                    wsServer.clients.forEach((c) => c.terminate());
+                }),
+        ]);
     });
     this.add('sys:debug,area:trace', function debugTraceActivation(msg, reply) {
         const { active } = msg;
@@ -326,7 +345,7 @@ function debug(options) {
     });
     const { flame } = seneca.list_plugins();
     if (flame && options.flame) {
-        setInterval(() => {
+        flameInterval = setInterval(() => {
             seneca.act('sys:flame,cmd:get,cached:true', function response(err, out, meta) {
                 if (err) {
                     return;
@@ -341,7 +360,8 @@ function debug(options) {
         }, 3000);
     }
 }
-const defaults = (0, gubu_1.Open)({
+// Options not listed here are refused.
+const defaults = {
     /*
      * Express server config
      */
@@ -364,7 +384,11 @@ const defaults = (0, gubu_1.Open)({
      * Will log the metadata to the console
      */
     logToConsole: false,
-});
+    /*
+     * Show flame graphs, if the @seneca/flame plugin is loaded
+     */
+    flame: false,
+};
 async function preload(seneca) { }
 Object.assign(debug, { defaults, preload });
 exports.default = debug;
